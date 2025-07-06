@@ -67,8 +67,8 @@ public class PlayerImageController {
     @GetMapping("/urls")
     public ResponseEntity<ApiResponse<?>> getPlayerImageUrls(@Parameter(description = "Player ID") @PathVariable Long playerId) {
         try {
-            List<String> imageUrls = playerImageService.getImagesByPlayerId(playerId)
-                    .stream().map(PlayerImage::getImageUrl).collect(Collectors.toList());
+        List<String> imageUrls = playerImageService.getImagesByPlayerId(playerId)
+                .stream().map(PlayerImage::getImageUrl).collect(Collectors.toList());
 
             Map<String, Object> response = new HashMap<>();
             response.put("imageUrls", imageUrls);
@@ -146,7 +146,7 @@ public class PlayerImageController {
             @Parameter(description = "Player ID") @PathVariable Long playerId, 
             @Parameter(description = "Image ID") @PathVariable Long imageId) {
         try {
-            playerImageService.deleteImage(imageId);
+        playerImageService.deleteImage(imageId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Xóa ảnh thành công", null));
         } catch (Exception e) {
             log.error("Error deleting player image: {}", e.getMessage());

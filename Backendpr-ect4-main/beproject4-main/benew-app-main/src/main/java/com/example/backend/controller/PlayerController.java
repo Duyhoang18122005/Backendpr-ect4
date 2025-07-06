@@ -46,6 +46,7 @@ public class PlayerController {
     private final PaymentRepository paymentRepository;
     private final GameRepository gameRepository;
     private final NotificationService notificationService;
+    private final OrderRepository orderRepository;
 
     private static final int MAX_FOLLOWING = 1000; // Giới hạn số người theo dõi
 
@@ -58,7 +59,8 @@ public class PlayerController {
                           GamePlayerService gamePlayerService,
                           PaymentRepository paymentRepository,
                           GameRepository gameRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          OrderRepository orderRepository) {
         this.userService = userService;
         this.playerStatsService = playerStatsService;
         this.playerFollowRepository = playerFollowRepository;
@@ -69,6 +71,7 @@ public class PlayerController {
         this.paymentRepository = paymentRepository;
         this.gameRepository = gameRepository;
         this.notificationService = notificationService;
+        this.orderRepository = orderRepository;
     }
 
     @GetMapping("/{playerId}/stats")
@@ -410,10 +413,10 @@ public class PlayerController {
     @GetMapping("/{gamePlayerId}/hire-hours")
     @Operation(summary = "Get total hire hours of a game player")
     public ResponseEntity<?> getPlayerTotalHireHours(@PathVariable Long gamePlayerId) {
-        List<Payment> hires = paymentRepository.findByPlayerIdAndTypeOrderByCreatedAtDesc(gamePlayerId, Payment.PaymentType.HIRE);
-        int totalHours = hires.stream()
-            .filter(h -> h.getStartTime() != null && h.getEndTime() != null)
-            .mapToInt(h -> (int) java.time.Duration.between(h.getStartTime(), h.getEndTime()).toHours())
+        List<Order> orders = orderRepository.findByPlayer_IdAndStatus(gamePlayerId, "COMPLETED");
+        int totalHours = orders.stream()
+            .filter(o -> o.getStartTime() != null && o.getEndTime() != null)
+            .mapToInt(o -> (int) java.time.Duration.between(o.getStartTime(), o.getEndTime()).toHours())
             .sum();
         return ResponseEntity.ok(Map.of(
             "gamePlayerId", gamePlayerId,

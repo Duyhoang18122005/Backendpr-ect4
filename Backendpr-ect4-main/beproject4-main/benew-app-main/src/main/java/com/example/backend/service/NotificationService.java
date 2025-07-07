@@ -26,7 +26,7 @@ public class NotificationService {
     private final UserRepository userRepository;
 
     // Đường dẫn tới file JSON service account
-    private static final String SERVICE_ACCOUNT_FILE = "notifigation-d7a54-firebase-adminsdk-fbsvc-b423d542ff.json";
+    private static final String SERVICE_ACCOUNT_FILE = "notifigation-d7a54-firebase-adminsdk-fbsvc-a85dd72f5c.json";
     // Lấy projectId từ file JSON hoặc Firebase Console
     private static final String PROJECT_ID = "notifigation-d7a54";
 

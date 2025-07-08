@@ -70,6 +70,12 @@ public class GamePlayer {
     @Min(value = 1, message = "Hours hired must be at least 1")
     private Integer hoursHired; // Số giờ thuê
 
+    @Column(name = "total_minutes_hired")
+    private Long totalMinutesHired = 0L;
+
+    @Column(name = "last_reward_milestone")
+    private Integer lastRewardMilestone = 0; // 0: chưa nhận, 1: mốc 1, ...
+
     @PrePersist
     @PreUpdate
     public void validateData() {

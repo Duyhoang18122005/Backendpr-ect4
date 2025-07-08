@@ -32,6 +32,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.example.backend.service.FileStorageService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,17 +44,20 @@ public class AuthController {
     private final UserService userService;
     private final NotificationService notificationService;
     private final PasswordResetService passwordResetService;
+    private final FileStorageService fileStorageService;
 
     public AuthController(AuthenticationManager authenticationManager,
                          JwtTokenUtil jwtTokenUtil,
                          UserService userService,
                          NotificationService notificationService,
-                         PasswordResetService passwordResetService) {
+                         PasswordResetService passwordResetService,
+                         FileStorageService fileStorageService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
         this.notificationService = notificationService;
         this.passwordResetService = passwordResetService;
+        this.fileStorageService = fileStorageService;
     }
 
     @PostMapping("/register")
@@ -240,6 +244,17 @@ public class AuthController {
         User currentUser = userService.findByUsername(authentication.getName());
         User updatedUser = userService.updateProfileImage(currentUser.getId(), file);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @PostMapping("/update/cover-image")
+    public ResponseEntity<?> updateCoverImage(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) throws IOException {
+        User currentUser = userService.findByUsername(authentication.getName());
+        String url = fileStorageService.storeFile(file, "cover-images");
+        currentUser.setCoverImageUrl(url);
+        userService.save(currentUser);
+        return ResponseEntity.ok(Map.of("coverImageUrl", url));
     }
 
     @DeleteMapping("/delete/avatar")

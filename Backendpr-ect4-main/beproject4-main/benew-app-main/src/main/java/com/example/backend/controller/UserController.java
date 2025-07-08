@@ -9,6 +9,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 import java.util.Set;
+import org.springframework.http.MediaType;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/users")
@@ -38,7 +42,8 @@ public class UserController {
             user.getUsername(),
             user.getEmail(),
             user.getFullName(),
-            user.getAvatarUrl()
+            user.getAvatarUrl(),
+            user.getCoverImageUrl()
         ));
     }
 
@@ -150,6 +155,39 @@ public class UserController {
         ));
     }
 
+    @GetMapping("/{userId}/cover-image")
+    public ResponseEntity<?> getUserCoverImage(@PathVariable Long userId) {
+        User user = userService.findById(userId);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of("coverImageUrl", user.getCoverImageUrl()));
+    }
+
+    @GetMapping(value = "/{userId}/cover-image-bytes", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getUserCoverImageBytes(@PathVariable Long userId) throws IOException {
+        User user = userService.findById(userId);
+        if (user == null || user.getCoverImageUrl() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String filePath = user.getCoverImageUrl();
+        // Đảm bảo đường dẫn vật lý đúng thư mục uploads/cover-images
+        if (!filePath.startsWith("uploads/")) {
+            if (filePath.startsWith("cover-images/")) {
+                filePath = "uploads/" + filePath;
+            } else {
+                filePath = "uploads/cover-images/" + filePath;
+            }
+        }
+        String absPath = System.getProperty("user.dir") + java.io.File.separator + filePath.replace("/", java.io.File.separator);
+        java.io.File file = new java.io.File(absPath);
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imageBytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(imageBytes);
+    }
+
     @GetMapping("/recent")
     public ResponseEntity<?> getRecentUsers() {
         var users = userService.findRecentUsers();
@@ -169,13 +207,15 @@ class UserInfoDTO {
     private String email;
     private String fullName;
     private String avatarUrl;
+    private String coverImageUrl;
 
-    public UserInfoDTO(Long id, String username, String email, String fullName, String avatarUrl) {
+    public UserInfoDTO(Long id, String username, String email, String fullName, String avatarUrl, String coverImageUrl) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
+        this.coverImageUrl = coverImageUrl;
     }
 
     public Long getId() { return id; }
@@ -183,6 +223,7 @@ class UserInfoDTO {
     public String getEmail() { return email; }
     public String getFullName() { return fullName; }
     public String getAvatarUrl() { return avatarUrl; }
+    public String getCoverImageUrl() { return coverImageUrl; }
 }
 
 class UserRecentDTO {

@@ -15,6 +15,7 @@ import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.example.backend.service.PlayerRewardService;
 
 @Service
 public class OrderService {
@@ -30,6 +31,8 @@ public class OrderService {
     private PlayerReviewRepository playerReviewRepository;
     @Autowired
     private GamePlayerService gamePlayerService;
+    @Autowired
+    private PlayerRewardService playerRewardService;
 
     // Chạy mỗi 5 phút
     @Scheduled(fixedRate = 300000)
@@ -111,6 +114,9 @@ public class OrderService {
                 // Tự động hoàn thành đơn hàng
                 order.setStatus("COMPLETED");
                 orderRepository.save(order);
+
+                // Gọi logic thưởng cho player
+                playerRewardService.processOrderCompleted(order);
                 
                 // Cập nhật trạng thái player về AVAILABLE
                 if (order.getPlayer() != null) {

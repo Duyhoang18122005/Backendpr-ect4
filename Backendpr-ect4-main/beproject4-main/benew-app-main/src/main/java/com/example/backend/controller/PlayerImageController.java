@@ -95,43 +95,31 @@ public class PlayerImageController {
                 return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, "File không được để trống", null));
             }
-
-            // Kiểm tra định dạng file
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Chỉ chấp nhận file ảnh", null));
-            }
-
+            // Bỏ kiểm tra định dạng file, cho phép upload mọi loại file
             // Lấy đường dẫn tuyệt đối tới thư mục gốc project
             String rootPath = new File("").getAbsolutePath();
             File dir = new File(rootPath, uploadDir);
-            // Đảm bảo tạo đủ thư mục cha
             if (!dir.exists()) {
                 boolean created = dir.mkdirs();
                 log.info("[UPLOAD] Created upload dir: {} => {}", dir.getAbsolutePath(), created);
             }
             String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             File dest = new File(dir, fileName);
-            // Đảm bảo tạo đủ thư mục cha cho file (nếu có)
             dest.getParentFile().mkdirs();
             log.info("[UPLOAD] Saving file to: {}", dest.getAbsolutePath());
             file.transferTo(dest);
-            // Tạo URL truy cập ảnh
             String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                     .path("/" + uploadDir + "/")
                     .path(fileName)
                     .toUriString();
             log.info("[UPLOAD] File URL: {}", fileUrl);
             PlayerImage savedImage = playerImageService.addImageToPlayer(playerId, fileUrl);
-            
             Map<String, Object> response = new HashMap<>();
             response.put("imageId", savedImage.getId());
             response.put("imageUrl", savedImage.getImageUrl());
             response.put("fileName", extractFileNameFromUrl(savedImage.getImageUrl()));
             response.put("uploadTime", extractTimeFromFileName(savedImage.getImageUrl()));
             response.put("playerId", playerId);
-
             return ResponseEntity.ok(new ApiResponse<>(true, "Upload ảnh thành công", response));
         } catch (Exception e) {
             log.error("[UPLOAD][ERROR] playerId={}, file={}, error={}", playerId, file.getOriginalFilename(), e.getMessage(), e);

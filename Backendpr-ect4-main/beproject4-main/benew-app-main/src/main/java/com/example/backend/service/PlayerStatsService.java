@@ -6,9 +6,11 @@ import com.example.backend.dto.HireStatsDTO;
 import com.example.backend.entity.Payment;
 import com.example.backend.entity.PlayerReview;
 import com.example.backend.entity.User;
+import com.example.backend.entity.GamePlayer;
 import com.example.backend.repository.PaymentRepository;
 import com.example.backend.repository.PlayerReviewRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.GamePlayerRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +24,16 @@ public class PlayerStatsService {
     private final PaymentRepository paymentRepository;
     private final PlayerReviewRepository playerReviewRepository;
     private final UserRepository userRepository;
+    private final GamePlayerRepository gamePlayerRepository;
 
     public PlayerStatsService(PaymentRepository paymentRepository,
                             PlayerReviewRepository playerReviewRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            GamePlayerRepository gamePlayerRepository) {
         this.paymentRepository = paymentRepository;
         this.playerReviewRepository = playerReviewRepository;
         this.userRepository = userRepository;
+        this.gamePlayerRepository = gamePlayerRepository;
     }
 
     @Transactional(readOnly = true)
@@ -44,7 +49,16 @@ public class PlayerStatsService {
 
         PlayerStatsDTO stats = new PlayerStatsDTO();
         stats.setPlayerId(playerId);
-        stats.setPlayerName(player.getUsername());
+        
+        // Lấy tên hiển thị từ GamePlayer thay vì User
+        List<GamePlayer> gamePlayers = gamePlayerRepository.findByUserId(playerId);
+        if (!gamePlayers.isEmpty()) {
+            // Lấy tên hiển thị từ GamePlayer đầu tiên (thường chỉ có 1 player per user)
+            stats.setPlayerName(gamePlayers.get(0).getUsername());
+        } else {
+            // Fallback về username của user nếu không tìm thấy GamePlayer
+            stats.setPlayerName(player.getUsername());
+        }
 
         // Tính toán thống kê cơ bản
         stats.setTotalHires(hires.size());

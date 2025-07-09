@@ -399,7 +399,7 @@ public class GamePlayerController {
             notificationService.createNotification(
                 user.getId(),
                 "Đơn thuê đã được xác nhận!",
-                "Player " + player.getUsername() + " đã xác nhận đơn thuê của bạn. Hãy chuẩn bị trải nghiệm dịch vụ!",
+                "Player " + gamePlayer.getUsername() + " đã xác nhận đơn thuê của bạn. Hãy chuẩn bị trải nghiệm dịch vụ!",
                 "rent_confirm",
                 null,
                 order.getId()
@@ -674,7 +674,7 @@ public class GamePlayerController {
             notificationService.createNotification(
                 user.getId(),
                 "Đơn thuê bị từ chối",
-                "Yêu cầu thuê player " + player.getUsername() + " đã bị từ chối.",
+                "Yêu cầu thuê player " + gamePlayer.getUsername() + " đã bị từ chối.",
                 "rent_reject",
                 null,
                 payment.getId()

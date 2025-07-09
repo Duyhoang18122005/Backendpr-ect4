@@ -317,7 +317,7 @@ public class OrderReviewController {
                 reviewData.put("rating", review.getRating());
                 reviewData.put("comment", review.getComment());
                 reviewData.put("orderId", review.getOrder().getId());
-                reviewData.put("playerName", review.getGamePlayer().getUser().getUsername());
+                reviewData.put("playerName", review.getGamePlayer().getUsername());
                 reviewData.put("playerAvatar", review.getGamePlayer().getUser().getAvatarUrl());
                 reviewData.put("gameName", review.getGamePlayer().getGame() != null ? review.getGamePlayer().getGame().getName() : "");
                 reviewData.put("createdAt", review.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
@@ -425,8 +425,7 @@ public class OrderReviewController {
                 .map(order -> {
                     Map<String, Object> orderData = new HashMap<>();
                     orderData.put("orderId", order.getId());
-                    orderData.put("playerName", order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                                order.getPlayer().getUser().getUsername() : "");
+                    orderData.put("playerName", order.getPlayer() != null ? order.getPlayer().getUsername() : "");
                     orderData.put("playerAvatar", order.getPlayer() != null && order.getPlayer().getUser() != null ? 
                                 order.getPlayer().getUser().getAvatarUrl() : "");
                     orderData.put("gameName", order.getPlayer() != null && order.getPlayer().getGame() != null ? 

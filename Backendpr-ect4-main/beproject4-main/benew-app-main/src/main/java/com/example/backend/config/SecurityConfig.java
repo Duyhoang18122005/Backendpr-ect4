@@ -36,6 +36,9 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/game-players/**").permitAll()
                 .requestMatchers("/api/payments/vnpay-return").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/uploads/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/avatars/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/player-images/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/cover-images/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

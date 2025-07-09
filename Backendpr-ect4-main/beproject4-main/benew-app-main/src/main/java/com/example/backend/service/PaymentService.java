@@ -189,11 +189,11 @@ public class PaymentService {
             paymentRepository.save(payment);
             // Gửi notification nhắc đánh giá cho người thuê
             User user = payment.getUser();
-            User player = payment.getPlayer();
+            GamePlayer gamePlayer = payment.getGamePlayer();
             notificationService.createNotification(
                 user.getId(),
                 "Đánh giá trải nghiệm của bạn!",
-                "Đơn thuê đã hoàn thành. Hãy để lại đánh giá cho player " + (player != null ? player.getUsername() : "player") + " nhé!",
+                "Đơn thuê đã hoàn thành. Hãy để lại đánh giá cho player " + (gamePlayer != null ? gamePlayer.getUsername() : "player") + " nhé!",
                 "review_reminder",
                 null,
                 payment.getId()

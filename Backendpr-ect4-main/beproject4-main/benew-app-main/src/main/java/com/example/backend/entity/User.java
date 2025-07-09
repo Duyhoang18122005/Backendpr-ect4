@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -67,6 +68,7 @@ public class User {
 
     @Lob
     @Column(name = "avatar_data")
+    @JsonIgnore
     private byte[] avatarData;
 
     @Lob

@@ -159,8 +159,7 @@ public class OrderService {
                 if (!hasReview) {
                     // Gửi thông báo đánh giá cho người thuê
                     if (order.getRenter() != null) {
-                        String playerName = order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                                          order.getPlayer().getUser().getUsername() : "Player";
+                        String playerName = order.getPlayer() != null ? order.getPlayer().getUsername() : "Player";
                         
                         notificationService.createNotification(
                             order.getRenter().getId(),
@@ -192,8 +191,7 @@ public class OrderService {
             boolean hasReview = playerReviewRepository.existsByOrderId(order.getId());
             
             if (!hasReview && order.getRenter() != null) {
-                String playerName = order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                                  order.getPlayer().getUser().getUsername() : "Player";
+                String playerName = order.getPlayer() != null ? order.getPlayer().getUsername() : "Player";
                 
                 notificationService.createNotification(
                     order.getRenter().getId(),

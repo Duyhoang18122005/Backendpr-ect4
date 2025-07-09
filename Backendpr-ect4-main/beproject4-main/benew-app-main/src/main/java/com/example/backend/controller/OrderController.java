@@ -117,7 +117,7 @@ public class OrderController {
         data.put("hirerId", order.getRenter() != null ? order.getRenter().getId() : null);
         
         // Thông tin player - giống hệt API cũ
-        data.put("playerName", order.getPlayer() != null && order.getPlayer().getUser() != null ? order.getPlayer().getUser().getUsername() : null);
+        data.put("playerName", order.getPlayer() != null ? order.getPlayer().getUsername() : null);
         data.put("playerId", order.getPlayer() != null && order.getPlayer().getUser() != null ? order.getPlayer().getUser().getId() : null);
         data.put("playerAvatarUrl", order.getPlayer() != null && order.getPlayer().getUser() != null ? order.getPlayer().getUser().getAvatarUrl() : null);
         
@@ -201,8 +201,7 @@ public class OrderController {
             UserOrderDTO dto = new UserOrderDTO();
             dto.setId(order.getId());
             dto.setRenterName(order.getRenter() != null ? order.getRenter().getUsername() : "");
-            dto.setPlayerName(order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                            order.getPlayer().getUser().getUsername() : "");
+            dto.setPlayerName(order.getPlayer() != null ? order.getPlayer().getUsername() : "");
             dto.setOrderType("HIRED"); // Đơn thuê
             dto.setGame(order.getPlayer() != null && order.getPlayer().getGame() != null ? 
                        order.getPlayer().getGame().getName() : "");
@@ -232,8 +231,7 @@ public class OrderController {
             UserOrderDTO dto = new UserOrderDTO();
             dto.setId(order.getId());
             dto.setRenterName(order.getRenter() != null ? order.getRenter().getUsername() : "");
-            dto.setPlayerName(order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                            order.getPlayer().getUser().getUsername() : "");
+            dto.setPlayerName(order.getPlayer() != null ? order.getPlayer().getUsername() : "");
             dto.setOrderType("HIRING"); // Đơn được thuê
             dto.setGame(order.getPlayer() != null && order.getPlayer().getGame() != null ? 
                        order.getPlayer().getGame().getName() : "");
@@ -356,8 +354,7 @@ public class OrderController {
                 Map<String, Object> orderInfo = new HashMap<>();
                 orderInfo.put("id", order.getId());
                 orderInfo.put("renterName", order.getRenter() != null ? order.getRenter().getUsername() : "");
-                orderInfo.put("playerName", order.getPlayer() != null && order.getPlayer().getUser() != null ? 
-                             order.getPlayer().getUser().getUsername() : "");
+                orderInfo.put("playerName", order.getPlayer() != null ? order.getPlayer().getUsername() : "");
                 orderInfo.put("startTime", order.getStartTime());
                 orderInfo.put("endTime", order.getEndTime());
                 orderInfo.put("price", order.getPrice());
@@ -427,7 +424,7 @@ public class OrderController {
             OrderSummaryDTO dto = new OrderSummaryDTO();
             dto.setId(order.getId());
             dto.setRenterName(order.getRenter() != null ? order.getRenter().getUsername() : "");
-            dto.setPlayerName(order.getPlayer() != null && order.getPlayer().getUser() != null ? order.getPlayer().getUser().getUsername() : "");
+            dto.setPlayerName(order.getPlayer() != null ? order.getPlayer().getUsername() : "");
             if (order.getStartTime() != null && order.getEndTime() != null) {
                 String start = order.getStartTime().format(timeFormatter);
                 String end = order.getEndTime().format(timeFormatter);

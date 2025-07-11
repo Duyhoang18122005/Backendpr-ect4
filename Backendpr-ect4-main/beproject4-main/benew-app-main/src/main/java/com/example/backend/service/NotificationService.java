@@ -38,7 +38,7 @@ public class NotificationService {
     }
 
     public Notification createNotification(Long userId, String title, String message,
-                                        String type, String actionUrl, Long orderId) {
+                                        String type, String actionUrl, String relatedId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -51,7 +51,7 @@ public class NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notification.setActionUrl(actionUrl);
         notification.setStatus("ACTIVE");
-        notification.setOrderId(orderId);
+        notification.setOrderId(relatedId != null ? Long.valueOf(relatedId) : null);
 
         notification = notificationRepository.save(notification);
 
@@ -125,13 +125,13 @@ public class NotificationService {
                 
                 // Re-read the file for credentials
                 try (InputStream is2 = resource.getInputStream()) {
-                    // 1. Lấy access token từ file JSON
-                    GoogleCredentials googleCredentials = GoogleCredentials
+            // 1. Lấy access token từ file JSON
+            GoogleCredentials googleCredentials = GoogleCredentials
                             .fromStream(is2)
-                            .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"));
-                    
-                    System.out.println("[NotificationService] Credentials created successfully");
-                    System.out.println("[NotificationService] Using Project ID: " + PROJECT_ID);
+                    .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"));
+            
+            System.out.println("[NotificationService] Credentials created successfully");
+            System.out.println("[NotificationService] Using Project ID: " + PROJECT_ID);
                     
                     if (googleCredentials instanceof ServiceAccountCredentials) {
                         ServiceAccountCredentials serviceAccount = (ServiceAccountCredentials) googleCredentials;
@@ -144,41 +144,41 @@ public class NotificationService {
                             System.out.println("[NotificationService] WARNING: Project ID mismatch! Expected: " + PROJECT_ID + ", Got: " + serviceAccount.getProjectId());
                         }
                     }
-                    
-                    googleCredentials.refreshIfExpired();
-                    String accessToken = googleCredentials.getAccessToken().getTokenValue();
-                    System.out.println("[NotificationService] Access token obtained successfully");
+            
+            googleCredentials.refreshIfExpired();
+            String accessToken = googleCredentials.getAccessToken().getTokenValue();
+            System.out.println("[NotificationService] Access token obtained successfully");
                     System.out.println("[NotificationService] Access token length: " + accessToken.length());
 
-                    // 2. Tạo payload
-                    StringBuilder messageBuilder = new StringBuilder();
-                    messageBuilder.append("{")
-                        .append("\"message\":{")
-                        .append("\"token\":\"").append(deviceToken).append("\",")
-                        .append("\"notification\":{")
-                        .append("\"title\":\"").append(title.replace("\"", "\\\"")).append("\",")
-                        .append("\"body\":\"").append(body.replace("\"", "\\\"")).append("\"");
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        messageBuilder.append(",\"image\":\"").append(imageUrl).append("\"");
-                    }
-                    messageBuilder.append("}");
-                    messageBuilder.append("}");
-                    messageBuilder.append("}");
-                    String message = messageBuilder.toString();
+            // 2. Tạo payload
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("{")
+                .append("\"message\":{")
+                .append("\"token\":\"").append(deviceToken).append("\",")
+                .append("\"notification\":{")
+                .append("\"title\":\"").append(title.replace("\"", "\\\"")).append("\",")
+                .append("\"body\":\"").append(body.replace("\"", "\\\"")).append("\"");
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                messageBuilder.append(",\"image\":\"").append(imageUrl).append("\"");
+            }
+            messageBuilder.append("}");
+            messageBuilder.append("}");
+            messageBuilder.append("}");
+            String message = messageBuilder.toString();
 
-                    // 3. Gửi request
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setBearerAuth(accessToken);
-                    headers.setContentType(MediaType.APPLICATION_JSON);
+            // 3. Gửi request
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-                    HttpEntity<String> entity = new HttpEntity<>(message, headers);
-                    RestTemplate restTemplate = new RestTemplate();
+            HttpEntity<String> entity = new HttpEntity<>(message, headers);
+            RestTemplate restTemplate = new RestTemplate();
 
-                    String url = "https://fcm.googleapis.com/v1/projects/" + PROJECT_ID + "/messages:send";
+            String url = "https://fcm.googleapis.com/v1/projects/" + PROJECT_ID + "/messages:send";
                     System.out.println("[NotificationService] Sending request to: " + url);
-                    ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
-                    System.out.println("FCM v1 response: " + response.getBody());
+            System.out.println("FCM v1 response: " + response.getBody());
                 }
             }
         } catch (Exception e) {

@@ -196,7 +196,7 @@ public class PaymentService {
                 "Đơn thuê đã hoàn thành. Hãy để lại đánh giá cho player " + (gamePlayer != null ? gamePlayer.getUsername() : "player") + " nhé!",
                 "review_reminder",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
         }
     }

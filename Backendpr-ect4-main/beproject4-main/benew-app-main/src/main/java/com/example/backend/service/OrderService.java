@@ -51,7 +51,7 @@ public class OrderService {
                     "Đơn thuê của bạn với player " + (order.getPlayer() != null ? order.getPlayer().getUsername() : "") + " sẽ bắt đầu lúc " + order.getStartTime() + ".",
                     "order_upcoming",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             }
             if (order.getPlayer() != null && order.getPlayer().getUser() != null) {
@@ -61,7 +61,7 @@ public class OrderService {
                     "Bạn sắp có đơn thuê với user " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getStartTime() + ".",
                     "order_upcoming",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             }
         }
@@ -78,7 +78,7 @@ public class OrderService {
                     "Đơn thuê của bạn với player " + (order.getPlayer() != null ? order.getPlayer().getUsername() : "") + " sẽ kết thúc lúc " + order.getEndTime() + ".",
                     "order_ending",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             }
             if (order.getPlayer() != null && order.getPlayer().getUser() != null) {
@@ -88,7 +88,7 @@ public class OrderService {
                     "Bạn sắp kết thúc đơn thuê với user " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getEndTime() + ".",
                     "order_ending",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             }
         }
@@ -138,7 +138,7 @@ public class OrderService {
                         "Đơn thuê của bạn đã được tự động hoàn thành do hết thời gian.",
                         "order_auto_complete",
                         null,
-                        order.getId()
+                        order.getId().toString()
                     );
                 }
                 
@@ -149,7 +149,7 @@ public class OrderService {
                         "Đơn thuê của bạn đã được tự động hoàn thành do hết thời gian.",
                         "order_auto_complete",
                         null,
-                        order.getId()
+                        order.getId().toString()
                     );
                 }
                 
@@ -167,7 +167,7 @@ public class OrderService {
                             "Đơn thuê với " + playerName + " đã kết thúc. Hãy đánh giá trải nghiệm của bạn!",
                             "order_review_reminder",
                             null,
-                            order.getId()
+                            order.getId().toString()
                         );
                         
                         logger.info("Sent review reminder notification to user {} for auto-completed order {}", 
@@ -199,7 +199,7 @@ public class OrderService {
                     "Đơn thuê với " + playerName + " đã hoàn thành. Hãy đánh giá trải nghiệm của bạn!",
                     "order_review_reminder",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
                 
                 logger.info("Sent immediate review notification to user {} for completed order {}", 

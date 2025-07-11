@@ -325,7 +325,7 @@ public class GamePlayerController {
                 "Bạn vừa nhận được yêu cầu thuê từ " + user.getUsername() + ". Hãy xác nhận đơn thuê trong hệ thống.",
                 "rent",
                 null,
-                order.getId()
+                order.getId().toString()
             );
             // Gửi notification cho người thuê (user)
             notificationService.createNotification(
@@ -334,7 +334,7 @@ public class GamePlayerController {
                 "Bạn đã gửi yêu cầu thuê player " + gamePlayer.getUsername() + ". Vui lòng chờ xác nhận từ player.",
                 "rent_request",
                 null,
-                order.getId()
+                order.getId().toString()
             );
 
             Map<String, Object> response = new HashMap<>();
@@ -402,7 +402,7 @@ public class GamePlayerController {
                 "Player " + gamePlayer.getUsername() + " đã xác nhận đơn thuê của bạn. Hãy chuẩn bị trải nghiệm dịch vụ!",
                 "rent_confirm",
                 null,
-                order.getId()
+                order.getId().toString()
             );
 
             Map<String, Object> response = new HashMap<>();
@@ -516,7 +516,7 @@ public class GamePlayerController {
                     "Đơn thuê của bạn đã bị từ chối bởi player.",
                     "rent_reject",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             } else if (isRenter) {
                 // Người thuê tự hủy: gửi cho chính họ
@@ -526,7 +526,7 @@ public class GamePlayerController {
                     "Bạn đã hủy đơn thuê thành công.",
                     "rent_cancel",
                     null,
-                    order.getId()
+                    order.getId().toString()
                 );
             }
 
@@ -677,7 +677,7 @@ public class GamePlayerController {
                 "Yêu cầu thuê player " + gamePlayer.getUsername() + " đã bị từ chối.",
                 "rent_reject",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Đã từ chối đơn thuê thành công!", null));
@@ -749,7 +749,7 @@ public class GamePlayerController {
                 "Đơn thuê của bạn đã được hoàn thành.",
                 "rent_complete",
                 null,
-                order.getId()
+                order.getId().toString()
             );
             notificationService.createNotification(
                 gamePlayer.getUser().getId(),
@@ -757,7 +757,7 @@ public class GamePlayerController {
                 "Bạn đã hoàn thành đơn thuê với " + order.getRenter().getUsername() + ".",
                 "rent_complete",
                 null,
-                order.getId()
+                order.getId().toString()
             );
 
             // Gửi thông báo đánh giá cho người thuê
@@ -819,7 +819,7 @@ public class GamePlayerController {
                 "Bạn vừa nhận được đánh giá từ " + user.getUsername() + ".",
                 "review",
                 null,
-                order.getId()
+                order.getId().toString()
             );
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Đánh giá thành công!", review));
@@ -860,7 +860,7 @@ public class GamePlayerController {
                         "Đơn thuê với player này đã bị hủy và bạn đã được hoàn coin.",
                         "order_cancel_ban",
                         null,
-                        order.getId()
+                        order.getId().toString()
                     );
                 }
             }

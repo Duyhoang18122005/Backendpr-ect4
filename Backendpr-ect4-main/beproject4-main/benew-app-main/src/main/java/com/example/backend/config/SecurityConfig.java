@@ -39,6 +39,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/avatars/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/player-images/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/cover-images/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/moments/moment-images/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/moments/all").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

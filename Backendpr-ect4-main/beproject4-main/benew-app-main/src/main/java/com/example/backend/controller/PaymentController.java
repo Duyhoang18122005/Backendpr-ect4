@@ -209,7 +209,7 @@ public class PaymentController {
                 "Bạn vừa nạp thành công " + request.getCoin() + " coin vào tài khoản.",
                 "topup",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
 
             return ResponseEntity.ok(Map.of(
@@ -324,7 +324,7 @@ public class PaymentController {
                 "Bạn đã rút thành công " + coin + " coin.",
                 "withdraw",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
 
             return ResponseEntity.ok(Map.of(
@@ -513,7 +513,7 @@ public class PaymentController {
                 "Bạn đã nạp thành công " + payment.getCoin() + " VND qua VNPay.",
                 "topup_success",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
             // Trả về HTML đẹp
             String html = String.format(
@@ -546,7 +546,7 @@ public class PaymentController {
                 "Giao dịch VNPay thất bại. Vui lòng thử lại.",
                 "topup_failed",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
             return ResponseEntity.ok("Thanh toán thất bại!");
         }

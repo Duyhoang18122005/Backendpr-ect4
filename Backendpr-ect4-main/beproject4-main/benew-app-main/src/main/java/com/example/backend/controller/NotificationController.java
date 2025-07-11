@@ -51,7 +51,7 @@ public class NotificationController {
                     request.getMessage(),
                     request.getType(),
                     request.getActionUrl(),
-                    request.getOrderId()
+                    request.getOrderId() != null ? request.getOrderId().toString() : null
             );
             return ResponseEntity.ok(notification);
         } catch (ResourceNotFoundException e) {

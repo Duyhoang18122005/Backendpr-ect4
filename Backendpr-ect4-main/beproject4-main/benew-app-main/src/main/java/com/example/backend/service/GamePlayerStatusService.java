@@ -57,7 +57,7 @@ public class GamePlayerStatusService {
                 "Bạn vừa hoàn thành hợp đồng thuê với player " + (gamePlayer != null ? gamePlayer.getUsername() : "") + ". Hãy để lại đánh giá của bạn!",
                 "review_reminder",
                 null,
-                payment.getId()
+                payment.getId().toString()
             );
         }
     }

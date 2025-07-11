@@ -96,7 +96,7 @@ public class OrderReviewController {
                     "Bạn vừa nhận được đánh giá từ " + user.getUsername() + " cho đơn hàng #" + orderId,
                     "review",
                     null,
-                    orderId
+                    orderId.toString()
                 );
             }
 

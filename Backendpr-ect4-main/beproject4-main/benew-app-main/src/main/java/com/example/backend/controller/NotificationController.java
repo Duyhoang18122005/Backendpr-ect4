@@ -18,6 +18,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.InputStream;
+import java.util.Collections;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import org.springframework.core.io.ClassPathResource;
+
 import java.util.List;
 
 @RestController
@@ -154,6 +160,49 @@ public class NotificationController {
             System.out.println("[NotificationController] ====== END updateDeviceToken with error ======");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Test Firebase credentials")
+    @GetMapping("/test-firebase")
+    public ResponseEntity<?> testFirebaseCredentials() {
+        try {
+            System.out.println("[NotificationController] Testing Firebase credentials...");
+            
+            // Test loading the service account file
+            ClassPathResource resource = new ClassPathResource("notifigation-d7a54-firebase-adminsdk-fbsvc-e812eeeadd.json");
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Service account file not found");
+            }
+            
+            // Test creating credentials
+            try (InputStream is = resource.getInputStream()) {
+                GoogleCredentials credentials = GoogleCredentials
+                        .fromStream(is)
+                        .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"));
+                
+                if (credentials instanceof ServiceAccountCredentials) {
+                    ServiceAccountCredentials serviceAccount = (ServiceAccountCredentials) credentials;
+                    System.out.println("[NotificationController] Service Account Email: " + serviceAccount.getClientEmail());
+                    System.out.println("[NotificationController] Project ID: " + serviceAccount.getProjectId());
+                    
+                    // Test getting access token
+                    credentials.refreshIfExpired();
+                    String accessToken = credentials.getAccessToken().getTokenValue();
+                    
+                    return ResponseEntity.ok("Firebase credentials test successful. Access token length: " + accessToken.length());
+                } else {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Failed to create ServiceAccountCredentials");
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[NotificationController] Firebase test error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Firebase credentials test failed: " + e.getMessage());
         }
     }
 }

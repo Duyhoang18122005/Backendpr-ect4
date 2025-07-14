@@ -113,7 +113,7 @@ public class AuthController {
             notificationService.createNotification(
                 user.getId(),
                 "Chào mừng đến với PlayerDuo!",
-                "Cảm ơn bạn đã đăng ký tài khoản.",
+                "Cảm ơn bạn đã đăng ký tài khoản tại PlayerDuo. Chúc bạn có những trải nghiệm tuyệt vời!",
                 "welcome",
                 null,
                 null

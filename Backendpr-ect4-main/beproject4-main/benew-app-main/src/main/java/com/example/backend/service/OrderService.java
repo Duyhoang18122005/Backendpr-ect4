@@ -58,7 +58,7 @@ public class OrderService {
                 notificationService.createNotification(
                     order.getPlayer().getUser().getId(),
                     "Sắp đến giờ thuê!",
-                    "Bạn sắp có đơn thuê với user " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getStartTime() + ".",
+                    "Bạn sắp có đơn thuê với người dùng " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getStartTime() + ".",
                     "order_upcoming",
                     null,
                     order.getId().toString()
@@ -85,7 +85,7 @@ public class OrderService {
                 notificationService.createNotification(
                     order.getPlayer().getUser().getId(),
                     "Đơn thuê sắp kết thúc!",
-                    "Bạn sắp kết thúc đơn thuê với user " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getEndTime() + ".",
+                    "Bạn sắp kết thúc đơn thuê với người dùng " + (order.getRenter() != null ? order.getRenter().getUsername() : "") + " lúc " + order.getEndTime() + ".",
                     "order_ending",
                     null,
                     order.getId().toString()

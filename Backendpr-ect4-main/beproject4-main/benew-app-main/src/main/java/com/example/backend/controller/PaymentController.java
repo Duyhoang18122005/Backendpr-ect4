@@ -205,8 +205,8 @@ public class PaymentController {
             // Gửi notification khi nạp tiền thành công
             notificationService.createNotification(
                 user.getId(),
-                "Nạp coin thành công!",
-                "Bạn vừa nạp thành công " + request.getCoin() + " coin vào tài khoản.",
+                "Nạp xu thành công!",
+                "Bạn vừa nạp thành công " + request.getCoin() + " xu vào tài khoản.",
                 "topup",
                 null,
                 payment.getId().toString()
@@ -543,7 +543,7 @@ public class PaymentController {
             notificationService.createNotification(
                 payment.getUser().getId(),
                 "Nạp tiền thất bại",
-                "Giao dịch VNPay thất bại. Vui lòng thử lại.",
+                "Giao dịch VNPay thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
                 "topup_failed",
                 null,
                 payment.getId().toString()

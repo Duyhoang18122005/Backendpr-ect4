@@ -322,7 +322,7 @@ public class GamePlayerController {
             notificationService.createNotification(
                 gamePlayer.getUser().getId(),
                 "Bạn có đơn thuê mới!",
-                "Bạn vừa nhận được yêu cầu thuê từ " + user.getUsername() + ". Hãy xác nhận đơn thuê trong hệ thống.",
+                "Bạn vừa nhận được yêu cầu thuê từ " + user.getUsername() + ". Vui lòng xác nhận đơn thuê trong hệ thống.",
                 "rent",
                 null,
                 order.getId().toString()

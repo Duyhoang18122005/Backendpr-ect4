@@ -162,7 +162,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         notificationService.createNotification(
             user.getId(),
             "Đổi mật khẩu thành công!",
-            "Bạn vừa đổi mật khẩu thành công.",
+            "Bạn vừa đổi mật khẩu thành công. Nếu không phải bạn thực hiện, hãy liên hệ hỗ trợ ngay!",
             "password",
             null,
             null

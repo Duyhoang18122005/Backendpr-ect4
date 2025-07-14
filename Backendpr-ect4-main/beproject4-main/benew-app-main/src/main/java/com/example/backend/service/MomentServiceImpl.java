@@ -191,7 +191,7 @@ public class MomentServiceImpl implements MomentService {
             String title = gamePlayer.getUsername() + " vừa đăng khoảnh khắc mới!";
             String message = moment.getContent() != null && !moment.getContent().isEmpty() 
                     ? moment.getContent().substring(0, Math.min(moment.getContent().length(), 50)) + "..."
-                    : "Xem khoảnh khắc mới của " + gamePlayer.getUsername();
+                    : "Hãy xem khoảnh khắc mới của " + gamePlayer.getUsername() + " ngay nhé!";
             
             notificationService.createNotification(
                 follower.getId(),

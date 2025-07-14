@@ -93,7 +93,7 @@ public class OrderReviewController {
                 notificationService.createNotification(
                     order.getPlayer().getUser().getId(),
                     "Bạn nhận được đánh giá mới!",
-                    "Bạn vừa nhận được đánh giá từ " + user.getUsername() + " cho đơn hàng #" + orderId,
+                    "Bạn vừa nhận được đánh giá từ " + user.getUsername() + " cho đơn hàng #" + orderId + ".",
                     "review",
                     null,
                     orderId.toString()

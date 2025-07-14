@@ -58,7 +58,7 @@ public class MessageServiceImpl implements MessageService {
         notificationService.createNotification(
             receiver.getId(),
             "Bạn có tin nhắn mới!",
-            content,
+            sender.getUsername() + " vừa gửi cho bạn một tin nhắn: '" + content + "'",
             "message",
             null,
             null

@@ -1,60 +1,55 @@
 package com.example.backend.controller;
 
-import com.example.backend.entity.Payment;
-import com.example.backend.service.PaymentService;
-import com.example.backend.service.UserService;
-import com.example.backend.entity.User;
-import com.example.backend.exception.ResourceNotFoundException;
-import com.example.backend.exception.PaymentException;
-import com.example.backend.entity.PlayerReview;
-import com.example.backend.repository.PlayerReviewRepository;
-import com.example.backend.repository.PaymentRepository;
-import com.example.backend.service.QRCodeService;
-import com.example.backend.dto.ReviewRequest;
-import com.example.backend.dto.PlayerStatsDTO;
-import com.example.backend.entity.PlayerFollow;
-import com.example.backend.repository.PlayerFollowRepository;
-import com.example.backend.entity.UserBlock;
-import com.example.backend.entity.Notification;
-import com.example.backend.repository.UserBlockRepository;
-import com.example.backend.repository.NotificationRepository;
-import com.example.backend.service.NotificationService;
-import com.example.backend.service.VnPayService;
-import org.springframework.beans.factory.annotation.Autowired;
-import jakarta.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Size;
-
-import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.HashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.example.backend.dto.OrderResponseDTO;
-import java.time.format.DateTimeFormatter;
-import com.example.backend.repository.OrderRepository;
+import com.example.backend.dto.ReviewRequest;
+import com.example.backend.dto.TopupUserDTO;
 import com.example.backend.entity.Order;
+import com.example.backend.entity.Payment;
+import com.example.backend.entity.PlayerReview;
+import com.example.backend.entity.User;
+import com.example.backend.exception.PaymentException;
+import com.example.backend.exception.ResourceNotFoundException;
+import com.example.backend.repository.OrderRepository;
+import com.example.backend.repository.PaymentRepository;
+import com.example.backend.repository.PlayerReviewRepository;
+import com.example.backend.service.NotificationService;
+import com.example.backend.service.PaymentService;
+import com.example.backend.service.QRCodeService;
+import com.example.backend.service.UserService;
+import com.example.backend.service.VnPayService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.Data;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -72,12 +67,12 @@ public class PaymentController {
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
-    public PaymentController(PaymentService paymentService, UserService userService, 
-                           PaymentRepository paymentRepository, QRCodeService qrCodeService,
-                           PlayerReviewRepository playerReviewRepository,
-                           NotificationService notificationService,
-                           VnPayService vnPayService,
-                           OrderRepository orderRepository) {
+    public PaymentController(PaymentService paymentService, UserService userService,
+            PaymentRepository paymentRepository, QRCodeService qrCodeService,
+            PlayerReviewRepository playerReviewRepository,
+            NotificationService notificationService,
+            VnPayService vnPayService,
+            OrderRepository orderRepository) {
         this.paymentService = paymentService;
         this.userService = userService;
         this.paymentRepository = paymentRepository;
@@ -101,8 +96,7 @@ public class PaymentController {
                     user.getId(),
                     BigDecimal.valueOf(request.getCoin()),
                     "COIN",
-                    request.getPaymentMethod()
-            );
+                    request.getPaymentMethod());
             return ResponseEntity.ok(payment);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -204,18 +198,16 @@ public class PaymentController {
 
             // Gửi notification khi nạp tiền thành công
             notificationService.createNotification(
-                user.getId(),
-                "Nạp xu thành công!",
-                "Bạn vừa nạp thành công " + request.getCoin() + " xu vào tài khoản.",
-                "topup",
-                null,
-                payment.getId().toString()
-            );
+                    user.getId(),
+                    "Nạp xu thành công!",
+                    "Bạn vừa nạp thành công " + request.getCoin() + " xu vào tài khoản.",
+                    "topup",
+                    null,
+                    payment.getId().toString());
 
             return ResponseEntity.ok(Map.of(
-                "message", "Nạp coin thành công",
-                "coin", request.getCoin()
-            ));
+                    "message", "Nạp coin thành công",
+                    "coin", request.getCoin()));
         } catch (Exception e) {
             logger.error("Lỗi khi nạp coin: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Lỗi khi nạp coin: " + e.getMessage());
@@ -226,14 +218,16 @@ public class PaymentController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getHireHistory(Authentication authentication) {
         User user = userService.findByUsername(authentication.getName());
-        List<Payment> hires = paymentRepository.findByUserIdAndTypeOrderByCreatedAtDesc(user.getId(), Payment.PaymentType.HIRE);
+        List<Payment> hires = paymentRepository.findByUserIdAndTypeOrderByCreatedAtDesc(user.getId(),
+                Payment.PaymentType.HIRE);
         return ResponseEntity.ok(hires);
     }
 
     @GetMapping("/hire/player/{playerId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getPlayerHireHistory(@PathVariable Long playerId) {
-        List<Payment> hires = paymentRepository.findByPlayerIdAndTypeOrderByCreatedAtDesc(playerId, Payment.PaymentType.HIRE);
+        List<Payment> hires = paymentRepository.findByPlayerIdAndTypeOrderByCreatedAtDesc(playerId,
+                Payment.PaymentType.HIRE);
         return ResponseEntity.ok(hires);
     }
 
@@ -245,7 +239,7 @@ public class PaymentController {
             Authentication authentication) {
         User reviewer = userService.findByUsername(authentication.getName());
         Payment payment = paymentRepository.findById(paymentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
         // Kiểm tra quyền đánh giá
         if (!payment.getUser().getId().equals(reviewer.getId())) {
@@ -282,10 +276,9 @@ public class PaymentController {
         Double averageRating = playerReviewRepository.getAverageRatingByPlayerId(playerId);
         int reviewCount = reviews.size();
         return ResponseEntity.ok(Map.of(
-            "reviews", reviews,
-            "averageRating", averageRating != null ? averageRating : 0.0,
-            "reviewCount", reviewCount
-        ));
+                "reviews", reviews,
+                "averageRating", averageRating != null ? averageRating : 0.0,
+                "reviewCount", reviewCount));
     }
 
     @PostMapping("/withdraw")
@@ -295,11 +288,11 @@ public class PaymentController {
         try {
             User player = userService.findByUsername(authentication.getName());
             Long coin = request.getCoin();
-            
+
             if (coin == null || coin <= 0) {
                 return ResponseEntity.badRequest().body("Số coin không hợp lệ");
             }
-            
+
             if (player.getCoin() < coin) {
                 return ResponseEntity.badRequest().body("Số coin không đủ");
             }
@@ -319,18 +312,16 @@ public class PaymentController {
 
             // Gửi notification khi rút tiền thành công
             notificationService.createNotification(
-                player.getId(),
-                "Rút coin thành công",
-                "Bạn đã rút thành công " + coin + " coin.",
-                "withdraw",
-                null,
-                payment.getId().toString()
-            );
+                    player.getId(),
+                    "Rút coin thành công",
+                    "Bạn đã rút thành công " + coin + " coin.",
+                    "withdraw",
+                    null,
+                    payment.getId().toString());
 
             return ResponseEntity.ok(Map.of(
-                "message", "Rút coin thành công",
-                "coin", coin
-            ));
+                    "message", "Rút coin thành công",
+                    "coin", coin));
         } catch (Exception e) {
             logger.error("Lỗi khi rút coin: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Lỗi khi rút coin: " + e.getMessage());
@@ -359,18 +350,17 @@ public class PaymentController {
 
         String method = request.getMethod().toUpperCase();
         String transactionId = "TXN_" + System.currentTimeMillis();
-        
+
         try {
             switch (method) {
                 case "MOMO":
                 case "VNPAY":
                 case "ZALOPAY":
                     String qrCode = qrCodeService.generatePaymentQRCode(
-                        method,
-                        request.getCoin().toString(),
-                        user.getId().toString(),
-                        transactionId
-                    );
+                            method,
+                            request.getCoin().toString(),
+                            user.getId().toString(),
+                            transactionId);
                     response.setQrCode(qrCode);
                     response.setMessage("Quét mã QR bằng ứng dụng " + method + " để thanh toán");
                     break;
@@ -397,7 +387,8 @@ public class PaymentController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<TopupHistoryDTO>> getTopupHistory(Authentication authentication) {
         User user = userService.findByUsername(authentication.getName());
-        List<Payment> topups = paymentRepository.findByUserIdAndTypeOrderByCreatedAtDesc(user.getId(), Payment.PaymentType.TOPUP);
+        List<Payment> topups = paymentRepository.findByUserIdAndTypeOrderByCreatedAtDesc(user.getId(),
+                Payment.PaymentType.TOPUP);
         List<TopupHistoryDTO> result = topups.stream().map(payment -> {
             TopupHistoryDTO dto = new TopupHistoryDTO();
             dto.setId(payment.getId());
@@ -427,30 +418,52 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/topup-users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<TopupUserDTO>> getAllTopupUsers() {
+        List<Payment> topups = paymentService.getAllTopupPayments();
+        List<TopupUserDTO> result = topups.stream().map(payment -> {
+            TopupUserDTO dto = new TopupUserDTO();
+            dto.setId(payment.getId());
+            if (payment.getUser() != null) {
+                dto.setFullName(payment.getUser().getFullName());
+                dto.setAvatarUrl(payment.getUser().getAvatarUrl());
+                dto.setPhoneNumber(payment.getUser().getPhoneNumber());
+            }
+            dto.setCreatedAt(payment.getCreatedAt() != null ? payment.getCreatedAt().toString() : null);
+            dto.setCoin(payment.getCoin());
+            dto.setStatus(payment.getStatus());
+            dto.setMethod(payment.getPaymentMethod());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/vnpay/create")
-    public ResponseEntity<?> createVnPayPayment(@RequestParam Long amount, @RequestParam String orderInfo, @RequestParam Long userId, HttpServletRequest request) {
+    public ResponseEntity<?> createVnPayPayment(@RequestParam Long amount, @RequestParam String orderInfo,
+            @RequestParam Long userId, HttpServletRequest request) {
         log.info("=== BẮT ĐẦU: Tạo link VNPay ===");
         log.info("Request params: amount={}, orderInfo={}, userId={}", amount, orderInfo, userId);
         log.info("Request URI: {}", request.getRequestURI());
         log.info("Request method: {}", request.getMethod());
-        
+
         try {
             log.info("Bước 1: Lấy IP address");
             String ipAddr = request.getRemoteAddr();
             log.info("IP address: {}", ipAddr);
-            
+
             log.info("Bước 2: Tạo txnRef");
             String txnRef = String.valueOf(System.currentTimeMillis());
             log.info("TxnRef: {}", txnRef);
-            
+
             log.info("Bước 3: Gọi VnPayService.createPaymentUrl");
             String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, ipAddr, txnRef);
             log.info("Payment URL tạo thành công: {}", paymentUrl);
-            
+
             log.info("Bước 4: Tìm user theo userId");
             User user = userService.findById(userId);
             log.info("User tìm thấy: id={}, username={}", user.getId(), user.getUsername());
-            
+
             log.info("Bước 5: Tạo Payment entity");
             Payment payment = new Payment();
             payment.setUser(user);
@@ -463,21 +476,21 @@ public class PaymentController {
             payment.setCreatedAt(LocalDateTime.now());
             payment.setType(Payment.PaymentType.TOPUP);
             log.info("Payment entity đã tạo: {}", payment);
-            
+
             log.info("Bước 6: Lưu Payment vào database");
             Payment savedPayment = paymentRepository.save(payment);
             log.info("Payment đã lưu thành công: id={}", savedPayment.getId());
-            
+
             log.info("Bước 7: Trả về response");
             Map<String, Object> response = new HashMap<>();
             response.put("paymentUrl", paymentUrl);
             response.put("txnRef", txnRef);
             response.put("paymentId", savedPayment.getId());
             log.info("Response: {}", response);
-            
+
             log.info("=== KẾT THÚC: Tạo link VNPay thành công ===");
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             log.error("=== LỖI: Tạo link VNPay thất bại ===");
             log.error("Exception type: {}", e.getClass().getSimpleName());
@@ -498,7 +511,8 @@ public class PaymentController {
         String txnRef = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
         Payment payment = paymentRepository.findByVnpTxnRef(txnRef).orElse(null);
-        if (payment == null) return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng!");
+        if (payment == null)
+            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng!");
         if ("00".equals(responseCode)) {
             payment.setStatus(Payment.PaymentStatus.COMPLETED);
             paymentRepository.save(payment);
@@ -508,46 +522,45 @@ public class PaymentController {
             userService.save(user);
             // Gửi notification cho user
             notificationService.createNotification(
-                payment.getUser().getId(),
-                "Nạp tiền thành công",
-                "Bạn đã nạp thành công " + payment.getCoin() + " VND qua VNPay.",
-                "topup_success",
-                null,
-                payment.getId().toString()
-            );
+                    payment.getUser().getId(),
+                    "Nạp tiền thành công",
+                    "Bạn đã nạp thành công " + payment.getCoin() + " VND qua VNPay.",
+                    "topup_success",
+                    null,
+                    payment.getId().toString());
             // Trả về HTML đẹp
             String html = String.format(
-                "<html><head><title>Thanh toán thành công</title>" +
-                "<style>" +
-                "body { font-family: Arial, sans-serif; background: #f7f7f7; }" +
-                ".success-box { background: #fff; max-width: 400px; margin: 60px auto; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 32px 24px; text-align: center; }" +
-                ".success-icon { color: #4CAF50; font-size: 48px; margin-bottom: 16px; }" +
-                ".amount { color: #ff9800; font-size: 32px; font-weight: bold; margin: 12px 0; }" +
-                ".btn { display: inline-block; margin-top: 24px; padding: 10px 24px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 16px; text-decoration: none; transition: background 0.2s; }" +
-                ".btn:hover { background: #388e3c; }" +
-                "</style></head><body>" +
-                "<div class='success-box'>" +
-                "<div class='success-icon'>&#10004;</div>" +
-                "<h2>Thanh toán thành công!</h2>" +
-                "<div>Bạn đã nạp thành công:</div>" +
-                "<div class='amount'>%d xu</div>" +
-                "<div>Mã giao dịch: <b>%s</b></div>" +
-                
-                "</div></body></html>",
-                payment.getCoin(), txnRef
-            );
+                    "<html><head><title>Thanh toán thành công</title>" +
+                            "<style>" +
+                            "body { font-family: Arial, sans-serif; background: #f7f7f7; }" +
+                            ".success-box { background: #fff; max-width: 400px; margin: 60px auto; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 32px 24px; text-align: center; }"
+                            +
+                            ".success-icon { color: #4CAF50; font-size: 48px; margin-bottom: 16px; }" +
+                            ".amount { color: #ff9800; font-size: 32px; font-weight: bold; margin: 12px 0; }" +
+                            ".btn { display: inline-block; margin-top: 24px; padding: 10px 24px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 16px; text-decoration: none; transition: background 0.2s; }"
+                            +
+                            ".btn:hover { background: #388e3c; }" +
+                            "</style></head><body>" +
+                            "<div class='success-box'>" +
+                            "<div class='success-icon'>&#10004;</div>" +
+                            "<h2>Thanh toán thành công!</h2>" +
+                            "<div>Bạn đã nạp thành công:</div>" +
+                            "<div class='amount'>%d xu</div>" +
+                            "<div>Mã giao dịch: <b>%s</b></div>" +
+
+                            "</div></body></html>",
+                    payment.getCoin(), txnRef);
             return ResponseEntity.ok().header("Content-Type", "text/html; charset=UTF-8").body(html);
         } else {
             payment.setStatus(Payment.PaymentStatus.FAILED);
             paymentRepository.save(payment);
             notificationService.createNotification(
-                payment.getUser().getId(),
-                "Nạp tiền thất bại",
-                "Giao dịch VNPay thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
-                "topup_failed",
-                null,
-                payment.getId().toString()
-            );
+                    payment.getUser().getId(),
+                    "Nạp tiền thất bại",
+                    "Giao dịch VNPay thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
+                    "topup_failed",
+                    null,
+                    payment.getId().toString());
             return ResponseEntity.ok("Thanh toán thất bại!");
         }
     }
@@ -604,7 +617,7 @@ class DepositRequest {
 
 @Data
 class DepositResponse {
-    private String qrCode;  // Base64 encoded QR code image
+    private String qrCode; // Base64 encoded QR code image
     private String message;
     private String bankAccount;
     private String bankName;

@@ -12,4 +12,5 @@ public class OrderSummaryDTO {
     private String statusLabel;
     private String renterAvatarUrl;
     private String playerAvatarUrl;
-} 
+    private String date; // Ngày của đơn hàng (yyyy-MM-dd)
+}

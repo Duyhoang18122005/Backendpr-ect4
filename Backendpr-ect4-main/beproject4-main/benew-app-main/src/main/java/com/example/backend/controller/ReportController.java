@@ -44,7 +44,8 @@ public class ReportController {
                     request.getReportedPlayerId(),
                     reporterId,
                     request.getReason(),
-                    request.getDescription()
+                    request.getDescription(),
+                    request.getVideo()
             );
             return ResponseEntity.ok(report);
         } catch (ReportException e) {
@@ -134,6 +135,9 @@ class ReportRequest {
 
     @NotBlank(message = "Description is required")
     private String description;
+
+    // Link video bằng chứng (có thể null)
+    private String video;
 }
 
 @Data

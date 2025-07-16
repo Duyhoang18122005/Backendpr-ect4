@@ -26,6 +26,9 @@ public class Report {
     @Column(length = 1000)
     private String description;
 
+    @Column(length = 1000)
+    private String video; // Link video bằng chứng (có thể null)
+
     @Column(nullable = false)
     private String status; // PENDING, INVESTIGATING, RESOLVED, REJECTED
 

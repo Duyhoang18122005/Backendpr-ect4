@@ -29,7 +29,7 @@ public class ReportService {
         this.userRepository = userRepository;
     }
 
-    public Report createReport(Long reportedPlayerId, Long reporterId, String reason, String description) {
+    public Report createReport(Long reportedPlayerId, Long reporterId, String reason, String description, String video) {
         GamePlayer reportedPlayer = gamePlayerRepository.findById(reportedPlayerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reported player not found"));
         User reporter = userRepository.findById(reporterId)
@@ -48,6 +48,7 @@ public class ReportService {
         report.setDescription(description);
         report.setStatus("PENDING");
         report.setCreatedAt(LocalDateTime.now());
+        report.setVideo(video);
 
         return reportRepository.save(report);
     }

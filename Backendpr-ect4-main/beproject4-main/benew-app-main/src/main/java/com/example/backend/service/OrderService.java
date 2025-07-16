@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.backend.service.PlayerRewardService;
+import com.example.backend.entity.User;
+import com.example.backend.repository.UserRepository;
 
 @Service
 public class OrderService {
@@ -33,6 +35,8 @@ public class OrderService {
     private GamePlayerService gamePlayerService;
     @Autowired
     private PlayerRewardService playerRewardService;
+    @Autowired
+    private UserRepository userRepository;
 
     // Chạy mỗi 5 phút
     @Scheduled(fixedRate = 300000)
@@ -114,6 +118,15 @@ public class OrderService {
                 // Tự động hoàn thành đơn hàng
                 order.setStatus("COMPLETED");
                 orderRepository.save(order);
+
+                // Cộng nốt 40% coin cho player khi hoàn thành đơn tự động
+                long totalCoin = order.getPrice();
+                long playerReceive40 = Math.round(totalCoin * 0.4);
+                if (order.getPlayer() != null && order.getPlayer().getUser() != null) {
+                    User playerUser = order.getPlayer().getUser();
+                    playerUser.setCoin(playerUser.getCoin() + playerReceive40);
+                    userRepository.save(playerUser);
+                }
 
                 // Gọi logic thưởng cho player
                 playerRewardService.processOrderCompleted(order);

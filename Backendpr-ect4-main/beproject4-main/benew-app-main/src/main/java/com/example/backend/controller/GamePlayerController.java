@@ -374,14 +374,15 @@ public class GamePlayerController {
             // Trừ coin, cộng coin, lưu revenue
             User user = order.getRenter();
             long totalCoin = order.getPrice();
-            long playerReceive = Math.round(totalCoin * 0.9);
-            long appRevenue = totalCoin - playerReceive;
+            long playerReceive50 = Math.round(totalCoin * 0.5);
+            // 40% sẽ cộng khi hoàn thành đơn
+            long appRevenue = Math.round(totalCoin * 0.1); // 10% cho app
             if (user.getCoin() < totalCoin) {
                 return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, "Người thuê không đủ coin", null));
             }
             user.setCoin(user.getCoin() - totalCoin);
-            player.setCoin(player.getCoin() + playerReceive);
+            player.setCoin(player.getCoin() + playerReceive50);
             userService.save(user);
             userService.save(player);
 
@@ -734,6 +735,13 @@ public class GamePlayerController {
             // Cập nhật trạng thái đơn và player
             order.setStatus("COMPLETED");
             orderRepository.save(order);
+
+            // Cộng nốt 40% coin cho player khi hoàn thành đơn
+            long totalCoin = order.getPrice();
+            long playerReceive40 = Math.round(totalCoin * 0.4);
+            User playerUser = gamePlayer.getUser();
+            playerUser.setCoin(playerUser.getCoin() + playerReceive40);
+            userService.save(playerUser);
 
             gamePlayer.setStatus("AVAILABLE");
             gamePlayer.setHiredBy(null);

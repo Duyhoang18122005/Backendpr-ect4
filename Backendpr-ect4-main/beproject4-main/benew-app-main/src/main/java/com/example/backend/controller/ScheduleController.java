@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/schedules")
@@ -25,9 +26,11 @@ import java.util.List;
 @Tag(name = "Schedule", description = "Schedule management APIs")
 public class ScheduleController {
     private final ScheduleService scheduleService;
+    private final UserService userService;
 
-    public ScheduleController(ScheduleService scheduleService) {
+    public ScheduleController(ScheduleService scheduleService, UserService userService) {
         this.scheduleService = scheduleService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Create a new schedule")
@@ -37,9 +40,10 @@ public class ScheduleController {
             @Valid @RequestBody ScheduleRequest request,
             Authentication authentication) {
         try {
+            Long userId = userService.findByUsername(authentication.getName()).getId();
             Schedule schedule = scheduleService.createSchedule(
                     request.getGamePlayerId(),
-                    Long.parseLong(authentication.getName()),
+                    userId,
                     request.getStartTime(),
                     request.getEndTime(),
                     request.getNotes()
@@ -93,8 +97,8 @@ public class ScheduleController {
     @GetMapping("/user")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Schedule>> getUserSchedules(Authentication authentication) {
-        return ResponseEntity.ok(scheduleService.getUserSchedules(
-                Long.parseLong(authentication.getName())));
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        return ResponseEntity.ok(scheduleService.getUserSchedules(userId));
     }
 
     @Operation(summary = "Get schedules by status")

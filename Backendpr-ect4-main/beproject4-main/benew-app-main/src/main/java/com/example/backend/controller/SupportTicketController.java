@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.example.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/support-tickets")
@@ -23,9 +24,11 @@ import java.util.List;
 @Tag(name = "Support Ticket", description = "Support ticket management APIs")
 public class SupportTicketController {
     private final SupportTicketService supportTicketService;
+    private final UserService userService;
 
-    public SupportTicketController(SupportTicketService supportTicketService) {
+    public SupportTicketController(SupportTicketService supportTicketService, UserService userService) {
         this.supportTicketService = supportTicketService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Create a new support ticket")
@@ -35,8 +38,9 @@ public class SupportTicketController {
             @Valid @RequestBody TicketRequest request,
             Authentication authentication) {
         try {
+            Long userId = userService.findByUsername(authentication.getName()).getId();
             SupportTicket ticket = supportTicketService.createTicket(
-                    Long.parseLong(authentication.getName()),
+                    userId,
                     request.getTitle(),
                     request.getDescription(),
                     request.getCategory(),
@@ -113,8 +117,8 @@ public class SupportTicketController {
     @GetMapping("/user")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<SupportTicket>> getUserTickets(Authentication authentication) {
-        return ResponseEntity.ok(supportTicketService.getUserTickets(
-                Long.parseLong(authentication.getName())));
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        return ResponseEntity.ok(supportTicketService.getUserTickets(userId));
     }
 
     @Operation(summary = "Get tickets by status")
@@ -142,8 +146,8 @@ public class SupportTicketController {
     @GetMapping("/assigned")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SupportTicket>> getAssignedTickets(Authentication authentication) {
-        return ResponseEntity.ok(supportTicketService.getAssignedTickets(
-                Long.parseLong(authentication.getName())));
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        return ResponseEntity.ok(supportTicketService.getAssignedTickets(userId));
     }
 
     @GetMapping

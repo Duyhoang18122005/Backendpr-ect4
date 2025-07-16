@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.example.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -26,9 +27,11 @@ import java.util.List;
 @Tag(name = "Review", description = "Review management APIs")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final UserService userService;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService, UserService userService) {
         this.reviewService = reviewService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Create a new review")
@@ -40,7 +43,7 @@ public class ReviewController {
         try {
             Review review = reviewService.createReview(
                     request.getGamePlayerId(),
-                    Long.parseLong(authentication.getName()),
+                    userService.findByUsername(authentication.getName()).getId(),
                     request.getRating(),
                     request.getComment()
             );
@@ -92,8 +95,8 @@ public class ReviewController {
     @GetMapping("/user")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Review>> getUserReviews(Authentication authentication) {
-        return ResponseEntity.ok(reviewService.getUserReviews(
-                Long.parseLong(authentication.getName())));
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        return ResponseEntity.ok(reviewService.getUserReviews(userId));
     }
 
     @Operation(summary = "Get game player average rating")

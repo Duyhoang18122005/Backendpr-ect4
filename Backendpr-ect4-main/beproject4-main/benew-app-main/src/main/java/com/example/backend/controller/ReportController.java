@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.example.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -24,9 +25,11 @@ import java.util.List;
 @Tag(name = "Report", description = "Report management APIs")
 public class ReportController {
     private final ReportService reportService;
+    private final UserService userService;
 
-    public ReportController(ReportService reportService) {
+    public ReportController(ReportService reportService, UserService userService) {
         this.reportService = reportService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Create a new report")
@@ -36,14 +39,18 @@ public class ReportController {
             @Valid @RequestBody ReportRequest request,
             Authentication authentication) {
         try {
+            Long reporterId = userService.findByUsername(authentication.getName()).getId();
             Report report = reportService.createReport(
                     request.getReportedPlayerId(),
-                    Long.parseLong(authentication.getName()),
+                    reporterId,
                     request.getReason(),
                     request.getDescription()
             );
             return ResponseEntity.ok(report);
         } catch (ReportException e) {
+            if (e.getMessage() != null && e.getMessage().contains("already reported")) {
+                return ResponseEntity.badRequest().body(null);
+            }
             return ResponseEntity.badRequest().build();
         }
     }
@@ -70,8 +77,8 @@ public class ReportController {
     @GetMapping("/reporter")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Report>> getReportsByReporter(Authentication authentication) {
-        return ResponseEntity.ok(reportService.getReportsByReporter(
-                Long.parseLong(authentication.getName())));
+        Long reporterId = userService.findByUsername(authentication.getName()).getId();
+        return ResponseEntity.ok(reportService.getReportsByReporter(reporterId));
     }
 
     @Operation(summary = "Get reports by reported player")

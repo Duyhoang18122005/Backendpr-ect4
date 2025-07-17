@@ -24,10 +24,6 @@ public class PlayerReview {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "payment_id", nullable = false)
-    private Payment payment;
-
     @Column(nullable = false)
     private Integer rating; // 1-5 stars
 

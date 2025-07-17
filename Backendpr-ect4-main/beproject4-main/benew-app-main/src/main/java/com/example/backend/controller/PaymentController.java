@@ -506,62 +506,22 @@ public class PaymentController {
         request.getParameterMap().forEach((k, v) -> params.put(k, v[0]));
         boolean valid = vnPayService.verifyVnpayCallback(new HashMap<>(params));
         if (!valid) {
-            return ResponseEntity.badRequest().body("Sai checksum, giao dịch không hợp lệ!");
+            return ResponseEntity.ok(Map.of("success", false, "message", "Giao dịch không hợp lệ!"));
         }
         String txnRef = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
         Payment payment = paymentRepository.findByVnpTxnRef(txnRef).orElse(null);
-        if (payment == null)
-            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng!");
+        if (payment == null) return ResponseEntity.ok(Map.of("success", false, "message", "Không tìm thấy đơn hàng!"));
         if ("00".equals(responseCode)) {
             payment.setStatus(Payment.PaymentStatus.COMPLETED);
             paymentRepository.save(payment);
-            // CỘNG XU CHO USER
+            // Cộng xu cho user
             User user = payment.getUser();
             user.setCoin(user.getCoin() + payment.getCoin());
             userService.save(user);
-            // Gửi notification cho user
-            notificationService.createNotification(
-                    payment.getUser().getId(),
-                    "Nạp tiền thành công",
-                    "Bạn đã nạp thành công " + payment.getCoin() + " VND qua VNPay.",
-                    "topup_success",
-                    null,
-                    payment.getId().toString());
-            // Trả về HTML đẹp
-            String html = String.format(
-                    "<html><head><title>Thanh toán thành công</title>" +
-                            "<style>" +
-                            "body { font-family: Arial, sans-serif; background: #f7f7f7; }" +
-                            ".success-box { background: #fff; max-width: 400px; margin: 60px auto; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 32px 24px; text-align: center; }"
-                            +
-                            ".success-icon { color: #4CAF50; font-size: 48px; margin-bottom: 16px; }" +
-                            ".amount { color: #ff9800; font-size: 32px; font-weight: bold; margin: 12px 0; }" +
-                            ".btn { display: inline-block; margin-top: 24px; padding: 10px 24px; background: #4CAF50; color: #fff; border: none; border-radius: 6px; font-size: 16px; text-decoration: none; transition: background 0.2s; }"
-                            +
-                            ".btn:hover { background: #388e3c; }" +
-                            "</style></head><body>" +
-                            "<div class='success-box'>" +
-                            "<div class='success-icon'>&#10004;</div>" +
-                            "<h2>Thanh toán thành công!</h2>" +
-                            "<div>Bạn đã nạp thành công:</div>" +
-                            "<div class='amount'>%d xu</div>" +
-                            "<div>Mã giao dịch: <b>%s</b></div>" +
-
-                            "</div></body></html>",
-                    payment.getCoin(), txnRef);
-            return ResponseEntity.ok().header("Content-Type", "text/html; charset=UTF-8").body(html);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nạp tiền thành công!"));
         } else {
-            payment.setStatus(Payment.PaymentStatus.FAILED);
-            paymentRepository.save(payment);
-            notificationService.createNotification(
-                    payment.getUser().getId(),
-                    "Nạp tiền thất bại",
-                    "Giao dịch VNPay thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
-                    "topup_failed",
-                    null,
-                    payment.getId().toString());
-            return ResponseEntity.ok("Thanh toán thất bại!");
+            return ResponseEntity.ok(Map.of("success", false, "message", "Giao dịch thất bại!"));
         }
     }
 }

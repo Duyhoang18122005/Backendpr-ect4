@@ -345,6 +345,15 @@ public class PaymentController {
         return ResponseEntity.ok(user.getCoin());
     }
 
+    @Operation(summary = "Get all balance change history for current user")
+    @GetMapping("/balance-history")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Payment>> getBalanceHistory(Authentication authentication) {
+        User user = userService.findByUsername(authentication.getName());
+        List<Payment> payments = paymentRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        return ResponseEntity.ok(payments);
+    }
+
     @PostMapping("/deposit")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deposit(@RequestBody DepositRequest request, Authentication authentication) {
@@ -550,6 +559,46 @@ public class PaymentController {
             );
             return ResponseEntity.ok("Thanh toán thất bại!");
         }
+    }
+
+    @PostMapping("/donate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> donate(@RequestBody DonateRequest request, Authentication authentication) {
+        User user = userService.findByUsername(authentication.getName());
+        User player = userService.findById(request.getPlayerId());
+        if (player == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy player nhận donate"));
+        }
+        if (user.getCoin() < request.getCoin()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Số dư không đủ để donate"));
+        }
+        // Trừ xu người donate
+        user.setCoin(user.getCoin() - request.getCoin());
+        userService.save(user);
+        // Cộng xu cho player
+        player.setCoin(player.getCoin() + request.getCoin());
+        userService.save(player);
+        // Lưu Payment DONATE
+        Payment payment = new Payment();
+        payment.setUser(user);
+        payment.setPlayer(player);
+        payment.setCoin(request.getCoin());
+        payment.setCurrency("COIN");
+        payment.setStatus(Payment.PaymentStatus.COMPLETED);
+        payment.setPaymentMethod(Payment.PaymentMethod.DONATE);
+        payment.setType(Payment.PaymentType.DONATE);
+        payment.setCreatedAt(java.time.LocalDateTime.now());
+        payment.setDescription(request.getMessage());
+        paymentRepository.save(payment);
+        // (Có thể gửi notification cho player nếu muốn)
+        return ResponseEntity.ok(Map.of("message", "Donate thành công"));
+    }
+
+    @Data
+    static class DonateRequest {
+        private Long playerId;
+        private Long coin;
+        private String message;
     }
 }
 

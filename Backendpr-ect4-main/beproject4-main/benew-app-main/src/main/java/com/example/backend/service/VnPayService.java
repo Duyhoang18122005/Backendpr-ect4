@@ -44,10 +44,15 @@ public class VnPayService {
             vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
             vnp_Params.put("vnp_IpAddr", ipAddr);
             vnp_Params.put("vnp_CreateDate", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
+            vnp_Params.put("vnp_SecureHashType", "SHA512"); // Chỉ gửi lên URL, không dùng để ký
             log.info("vnp_Params đã tạo: {}", vnp_Params);
             
+            // Tạo bản sao để ký, loại bỏ vnp_SecureHashType
+            Map<String, String> paramsForHash = new HashMap<>(vnp_Params);
+            paramsForHash.remove("vnp_SecureHashType");
+            
             log.info("Bước 2: Sắp xếp params theo thứ tự alphabet");
-            List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
+            List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
             Collections.sort(fieldNames);
             log.info("Field names đã sắp xếp: {}", fieldNames);
             
@@ -58,14 +63,14 @@ public class VnPayService {
             
             while (itr.hasNext()) {
                 String fieldName = itr.next();
-                String fieldValue = vnp_Params.get(fieldName);
+                String fieldValue = paramsForHash.get(fieldName);
                 if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                    // Build hash data - ENCODE VALUE theo chuẩn VNPay
+                    // Build hash data - CHỈ ENCODE VALUE, KHÔNG ENCODE KEY
                     hashData.append(fieldName);
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
                     
-                    // Build query - ENCODE BOTH KEY AND VALUE theo chuẩn VNPay
+                    // Build query - ENCODE BOTH KEY AND VALUE
                     query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
                     query.append('=');
                     query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
@@ -76,12 +81,14 @@ public class VnPayService {
                     }
                 }
             }
+            // Thêm vnp_SecureHashType vào query (không vào hashData)
+            query.append("&vnp_SecureHashType=SHA512");
             
             log.info("Hash data: {}", hashData.toString());
             log.info("Query: {}", query.toString());
             
             log.info("Bước 4: Tạo secure hash");
-            String secureHash = hmacSHA512(vnp_HashSecret, hashData.toString());
+            String secureHash = hmacSHA512(vnp_HashSecret, hashData.toString()); // Đổi sang SHA512
             log.info("Secure hash: {}", secureHash);
             
             log.info("Bước 5: Tạo payment URL");
@@ -99,6 +106,18 @@ public class VnPayService {
             log.error("Exception message: {}", e.getMessage());
             log.error("Stack trace:", e);
             throw e;
+        }
+    }
+
+    private String hmacSHA256(String key, String data) {
+        try {
+            Mac hmac256 = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            hmac256.init(secretKey);
+            byte[] bytes = hmac256.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(bytes);
+        } catch (Exception ex) {
+            throw new RuntimeException("Lỗi tạo chữ ký VNPay", ex);
         }
     }
 
@@ -123,30 +142,49 @@ public class VnPayService {
     }
 
     public boolean verifyVnpayCallback(Map<String, String> params) {
-        String receivedHash = params.get("vnp_SecureHash");
-        params.remove("vnp_SecureHash");
-        params.remove("vnp_SecureHashType");
-        List<String> fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
-            String fieldValue = params.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                hashData.append(fieldName);
-                hashData.append('=');
-                try {
+        try {
+            String receivedHash = params.get("vnp_SecureHash");
+            if (receivedHash == null) {
+                log.error("Không tìm thấy vnp_SecureHash trong callback");
+                return false;
+            }
+            
+            // Loại bỏ các field không cần thiết cho việc tính hash
+            Map<String, String> paramsForHash = new HashMap<>(params);
+            paramsForHash.remove("vnp_SecureHash");
+            paramsForHash.remove("vnp_SecureHashType");
+            
+            List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
+            Collections.sort(fieldNames);
+            
+            StringBuilder hashData = new StringBuilder();
+            Iterator<String> itr = fieldNames.iterator();
+            
+            while (itr.hasNext()) {
+                String fieldName = itr.next();
+                String fieldValue = paramsForHash.get(fieldName);
+                if ((fieldValue != null) && (!fieldValue.isEmpty())) {
+                    hashData.append(fieldName);
+                    hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException("Encoding error", e);
-                }
-                if (itr.hasNext()) {
-                    hashData.append('&');
+                    if (itr.hasNext()) {
+                        hashData.append('&');
+                    }
                 }
             }
+            
+            String calculatedHash = hmacSHA512(vnp_HashSecret, hashData.toString()); // Đổi sang SHA512
+            log.info("Received hash: {}", receivedHash);
+            log.info("Calculated hash: {}", calculatedHash);
+            log.info("Hash data: {}", hashData.toString());
+            
+            boolean isValid = calculatedHash.equalsIgnoreCase(receivedHash);
+            log.info("Hash verification result: {}", isValid);
+            return isValid;
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi verify VNPay callback: {}", e.getMessage());
+            return false;
         }
-        String calculatedHash = hmacSHA512(vnp_HashSecret, hashData.toString());
-        return calculatedHash.equalsIgnoreCase(receivedHash);
     }
 } 

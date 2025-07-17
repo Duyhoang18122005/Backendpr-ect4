@@ -76,6 +76,20 @@ public class GamePlayer {
     @Column(name = "last_reward_milestone")
     private Integer lastRewardMilestone = 0; // 0: chưa nhận, 1: mốc 1, ...
 
+    // Thông tin ban
+    @Column(name = "ban_reason")
+    private String banReason; // Lý do ban
+
+    @Column(name = "ban_description")
+    private String banDescription; // Mô tả chi tiết lý do ban
+
+    @Column(name = "banned_at")
+    private LocalDateTime bannedAt; // Thời gian bị ban
+
+    @ManyToOne
+    @JoinColumn(name = "banned_by")
+    private User bannedBy; // Admin đã ban
+
     @PrePersist
     @PreUpdate
     public void validateData() {

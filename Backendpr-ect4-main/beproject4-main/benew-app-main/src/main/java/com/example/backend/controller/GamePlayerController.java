@@ -838,14 +838,25 @@ public class GamePlayerController {
         }
     }
 
+    @Data
+    public static class BanRequest {
+        @NotBlank(message = "Lý do ban là bắt buộc")    private String reason;
+        
+        @Size(max = 500, message = "Mô tả chi tiết không được quá 500")    private String description;
+    }
+
     @PostMapping("/ban/{playerId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(isolation = Isolation.SERIALIZABLE)
     @Operation(summary = "Ban player")
-    public ResponseEntity<ApiResponse<?>> banPlayer(@PathVariable Long playerId, Authentication authentication) {
+    public ResponseEntity<ApiResponse<?>> banPlayer(
+            @PathVariable Long playerId, 
+            @Valid @RequestBody BanRequest request,
+            Authentication authentication) {
         try {
             User admin = userService.findByUsername(authentication.getName());
             GamePlayer player = gamePlayerService.findById(playerId);
+            User playerUser = player.getUser();
 
             // Hủy các đơn thuê PENDING/CONFIRMED của player này
             List<Order> ordersToCancel = orderRepository.findAll().stream()
@@ -877,9 +888,37 @@ public class GamePlayerController {
             player.setStatus("BANNED");
             gamePlayerService.save(player);
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Player đã bị ban", null));
+            // Khóa tài khoản user
+            playerUser.setAccountNonLocked(false);
+            userService.save(playerUser);
+
+            // Đăng xuất player (set offline)
+            userService.setUserOffline(playerUser.getId());
+
+            // Gửi notification cho player bị ban
+            String notificationMessage = "Bạn đã bị ban vì lý do: " + request.getReason();
+            if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+                notificationMessage += "\nChi tiết: " + request.getDescription();
+            }
+            
+            notificationService.createNotification(
+                playerUser.getId(),
+                "Tài khoản của bạn đã bị ban",
+                notificationMessage,
+                "account_banned",
+                null,
+                null
+            );
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Player đã bị ban thành công", Map.of(
+                "playerId", playerId,
+                "reason", request.getReason(),
+                "description", request.getDescription(),
+                "bannedBy", admin.getUsername(),
+                "bannedAt", java.time.LocalDateTime.now()
+            )));
         } catch (Exception e) {
-            log.error("Error banning player: {}", e.getMessage());
+            log.error("Error banning player: " + e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(false, "Error banning player: " + e.getMessage(), null));
         }
@@ -898,6 +937,12 @@ public class GamePlayerController {
             }
             player.setStatus("AVAILABLE");
             gamePlayerService.save(player);
+
+            // Mở khóa tài khoản user
+            User playerUser = player.getUser();
+            playerUser.setAccountNonLocked(true);
+            userService.save(playerUser);
+
             return ResponseEntity.ok(new ApiResponse<>(true, "Player đã được mở ban", null));
         } catch (Exception e) {
             log.error("Error unbanning player: {}", e.getMessage());

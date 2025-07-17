@@ -47,9 +47,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByUserIdOrderByCreatedAtDesc(Long userId);
 
 
-    List<Payment> findByGamePlayerIdAndStatusAndEndTimeAfter(Long gamePlayerId, Payment.PaymentStatus status,
-            LocalDateTime endTime);
-
     List<Payment> findByTypeOrderByCreatedAtDesc(Payment.PaymentType type);
 
 

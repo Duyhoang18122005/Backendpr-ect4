@@ -51,12 +51,6 @@ public class VnPayService {
             // Tạo bản sao để ký, loại bỏ vnp_SecureHashType
             Map<String, String> paramsForHash = new HashMap<>(vnp_Params);
             paramsForHash.remove("vnp_SecureHashType");
-            
-
-
-            // Tạo bản sao để ký, loại bỏ vnp_SecureHashType
-            Map<String, String> paramsForHash = new HashMap<>(vnp_Params);
-            paramsForHash.remove("vnp_SecureHashType");
 
 
             log.info("Bước 2: Sắp xếp params theo thứ tự alphabet");
@@ -178,14 +172,6 @@ public class VnPayService {
             
             StringBuilder hashData = new StringBuilder();
             Iterator<String> itr = fieldNames.iterator();
-            
-
-
-            List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
-            Collections.sort(fieldNames);
-
-            StringBuilder hashData = new StringBuilder();
-            Iterator<String> itr = fieldNames.iterator();
 
 
             while (itr.hasNext()) {
@@ -211,12 +197,6 @@ public class VnPayService {
             log.info("Hash data: {}", hashData.toString());
 
             
-            boolean isValid = calculatedHash.equalsIgnoreCase(receivedHash);
-            log.info("Hash verification result: {}", isValid);
-            return isValid;
-            
-
-
             boolean isValid = calculatedHash.equalsIgnoreCase(receivedHash);
             log.info("Hash verification result: {}", isValid);
             return isValid;

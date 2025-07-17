@@ -158,6 +158,10 @@ public class PaymentService {
         return paymentRepository.findByTypeOrderByCreatedAtDesc(Payment.PaymentType.TOPUP);
     }
 
+    public List<Payment> getAllWithdrawPayments() {
+        return paymentRepository.findByTypeOrderByCreatedAtDesc(Payment.PaymentType.WITHDRAW);
+    }
+
     private Payment.PaymentMethod validateAndConvertPaymentMethod(String method) {
         try {
             return Payment.PaymentMethod.valueOf(method.toUpperCase());

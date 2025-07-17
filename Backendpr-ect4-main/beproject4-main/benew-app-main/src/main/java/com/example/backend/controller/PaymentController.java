@@ -448,6 +448,27 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/withdraw-users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<TopupUserDTO>> getAllWithdrawUsers() {
+        List<Payment> withdraws = paymentService.getAllWithdrawPayments();
+        List<TopupUserDTO> result = withdraws.stream().map(payment -> {
+            TopupUserDTO dto = new TopupUserDTO();
+            dto.setId(payment.getId());
+            if (payment.getUser() != null) {
+                dto.setFullName(payment.getUser().getFullName());
+                dto.setAvatarUrl(payment.getUser().getAvatarUrl());
+                dto.setPhoneNumber(payment.getUser().getPhoneNumber());
+            }
+            dto.setCreatedAt(payment.getCreatedAt() != null ? payment.getCreatedAt().toString() : null);
+            dto.setCoin(payment.getCoin());
+            dto.setStatus(payment.getStatus());
+            dto.setMethod(payment.getPaymentMethod());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/vnpay/create")
     public ResponseEntity<?> createVnPayPayment(@RequestParam Long amount, @RequestParam String orderInfo,
             @RequestParam Long userId, HttpServletRequest request) {

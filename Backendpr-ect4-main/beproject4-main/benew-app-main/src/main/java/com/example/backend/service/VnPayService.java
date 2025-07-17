@@ -47,9 +47,17 @@ public class VnPayService {
             vnp_Params.put("vnp_SecureHashType", "SHA512"); // Chỉ gửi lên URL, không dùng để ký
             log.info("vnp_Params đã tạo: {}", vnp_Params);
 
+            
             // Tạo bản sao để ký, loại bỏ vnp_SecureHashType
             Map<String, String> paramsForHash = new HashMap<>(vnp_Params);
             paramsForHash.remove("vnp_SecureHashType");
+            
+
+
+            // Tạo bản sao để ký, loại bỏ vnp_SecureHashType
+            Map<String, String> paramsForHash = new HashMap<>(vnp_Params);
+            paramsForHash.remove("vnp_SecureHashType");
+
 
             log.info("Bước 2: Sắp xếp params theo thứ tự alphabet");
             List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
@@ -70,6 +78,9 @@ public class VnPayService {
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
 
+                    
+
+
                     // Build query - ENCODE BOTH KEY AND VALUE
                     query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
                     query.append('=');
@@ -83,6 +94,9 @@ public class VnPayService {
             }
             // Thêm vnp_SecureHashType vào query (không vào hashData)
             query.append("&vnp_SecureHashType=SHA512");
+
+
+
 
             log.info("Hash data: {}", hashData.toString());
             log.info("Query: {}", query.toString());
@@ -149,16 +163,30 @@ public class VnPayService {
                 return false;
             }
 
+            
+
+
+
             // Loại bỏ các field không cần thiết cho việc tính hash
             Map<String, String> paramsForHash = new HashMap<>(params);
             paramsForHash.remove("vnp_SecureHash");
             paramsForHash.remove("vnp_SecureHashType");
+
+            
+            List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
+            Collections.sort(fieldNames);
+            
+            StringBuilder hashData = new StringBuilder();
+            Iterator<String> itr = fieldNames.iterator();
+            
+
 
             List<String> fieldNames = new ArrayList<>(paramsForHash.keySet());
             Collections.sort(fieldNames);
 
             StringBuilder hashData = new StringBuilder();
             Iterator<String> itr = fieldNames.iterator();
+
 
             while (itr.hasNext()) {
                 String fieldName = itr.next();
@@ -173,10 +201,21 @@ public class VnPayService {
                 }
             }
 
+            
+
+
+
             String calculatedHash = hmacSHA512(vnp_HashSecret, hashData.toString()); // Đổi sang SHA512
             log.info("Received hash: {}", receivedHash);
             log.info("Calculated hash: {}", calculatedHash);
             log.info("Hash data: {}", hashData.toString());
+
+            
+            boolean isValid = calculatedHash.equalsIgnoreCase(receivedHash);
+            log.info("Hash verification result: {}", isValid);
+            return isValid;
+            
+
 
             boolean isValid = calculatedHash.equalsIgnoreCase(receivedHash);
             log.info("Hash verification result: {}", isValid);

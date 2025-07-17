@@ -43,10 +43,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByVnpTxnRef(String vnpTxnRef);
 
+    List<Payment> findByGamePlayerIdAndStatusAndEndTimeAfter(Long gamePlayerId, Payment.PaymentStatus status, LocalDateTime endTime);
+    List<Payment> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+
     List<Payment> findByGamePlayerIdAndStatusAndEndTimeAfter(Long gamePlayerId, Payment.PaymentStatus status,
             LocalDateTime endTime);
 
     List<Payment> findByTypeOrderByCreatedAtDesc(Payment.PaymentType type);
+
 
     @Query(value = "SELECT DATE(created_at) as date, COUNT(id) as total FROM payments WHERE status = 'COMPLETED' AND type = 'HIRE' AND created_at BETWEEN :start AND :end GROUP BY DATE(created_at) ORDER BY DATE(created_at)", nativeQuery = true)
     List<Object[]> findDailyOrderCountBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);

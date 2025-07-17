@@ -85,6 +85,7 @@ public class OrderReviewController {
             review.setRating(request.getRating());
             review.setComment(request.getComment());
             review.setCreatedAt(LocalDateTime.now());
+            review.setPayment(order.getPayment());
             
             PlayerReview savedReview = playerReviewRepository.save(review);
 

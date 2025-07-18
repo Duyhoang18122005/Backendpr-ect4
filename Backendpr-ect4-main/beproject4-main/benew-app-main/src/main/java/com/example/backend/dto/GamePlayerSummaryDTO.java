@@ -14,4 +14,5 @@ public class GamePlayerSummaryDTO {
     private String rankLabel;
     private double rating;
     private String gameName;
-} 
+    private String avatarUrl;
+}

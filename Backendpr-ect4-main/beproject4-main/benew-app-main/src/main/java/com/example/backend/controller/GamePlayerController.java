@@ -1,49 +1,65 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.GamePlayerStatusResponse;
-import com.example.backend.entity.GamePlayer;
-import com.example.backend.service.GamePlayerService;
-import com.example.backend.dto.ApiResponse;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Arrays;
-import com.example.backend.entity.Game;
-import com.example.backend.repository.GameRepository;
-import com.example.backend.exception.ResourceNotFoundException;
-import com.example.backend.service.UserService;
-import com.example.backend.entity.User;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Isolation;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import com.example.backend.entity.Payment;
-import com.example.backend.repository.PaymentRepository;
-import com.example.backend.service.NotificationService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import java.util.stream.Collectors;
-import com.example.backend.repository.RevenueRepository;
-import com.example.backend.entity.Revenue;
-import com.example.backend.entity.Order;
-import com.example.backend.repository.OrderRepository;
-import com.example.backend.repository.ReviewRepository;
-import com.example.backend.entity.PlayerReview;
-import com.example.backend.repository.PlayerReviewRepository;
-import com.example.backend.dto.ReviewRequest;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.backend.dto.ApiResponse;
+import com.example.backend.dto.GamePlayerStatusResponse;
 import com.example.backend.dto.GamePlayerSummaryDTO;
+import com.example.backend.dto.ReviewRequest;
+import com.example.backend.entity.Game;
+import com.example.backend.entity.GamePlayer;
+import com.example.backend.entity.Order;
+import com.example.backend.entity.Payment;
+import com.example.backend.entity.PlayerReview;
+import com.example.backend.entity.User;
+import com.example.backend.exception.ResourceNotFoundException;
+import com.example.backend.repository.GameRepository;
+import com.example.backend.repository.OrderRepository;
+import com.example.backend.repository.PaymentRepository;
+import com.example.backend.repository.PlayerReviewRepository;
+import com.example.backend.repository.RevenueRepository;
+import com.example.backend.repository.ReviewRepository;
+import com.example.backend.service.GamePlayerService;
+import com.example.backend.service.NotificationService;
 import com.example.backend.service.OrderService;
-import java.util.ArrayList;
+import com.example.backend.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
 
 @RestController
 @RequestMapping("/api/game-players")
@@ -62,7 +78,10 @@ public class GamePlayerController {
     private final OrderService orderService;
     private static final Logger log = LoggerFactory.getLogger(GamePlayerController.class);
 
-    public GamePlayerController(GamePlayerService gamePlayerService, GameRepository gameRepository, UserService userService, PaymentRepository paymentRepository, NotificationService notificationService, RevenueRepository revenueRepository, ReviewRepository reviewRepository, OrderRepository orderRepository, PlayerReviewRepository playerReviewRepository, OrderService orderService) {
+    public GamePlayerController(GamePlayerService gamePlayerService, GameRepository gameRepository,
+            UserService userService, PaymentRepository paymentRepository, NotificationService notificationService,
+            RevenueRepository revenueRepository, ReviewRepository reviewRepository, OrderRepository orderRepository,
+            PlayerReviewRepository playerReviewRepository, OrderService orderService) {
         this.gamePlayerService = gamePlayerService;
         this.gameRepository = gameRepository;
         this.userService = userService;
@@ -132,14 +151,15 @@ public class GamePlayerController {
         // Kiểm tra user đã có player chưa
         if (!gamePlayerService.getGamePlayersByUser(request.getUserId()).isEmpty()) {
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "User đã đăng ký làm player rồi!", null));
+                    .body(new ApiResponse<>(false, "User đã đăng ký làm player rồi!", null));
         }
         User user = userService.findById(request.getUserId());
         // Kiểm tra thông tin bắt buộc
         if (user.getFullName() == null || user.getDateOfBirth() == null ||
-            user.getPhoneNumber() == null || user.getAddress() == null) {
+                user.getPhoneNumber() == null || user.getAddress() == null) {
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Bạn cần cập nhật đầy đủ thông tin cá nhân trước khi đăng ký làm player!", null));
+                    .body(new ApiResponse<>(false,
+                            "Bạn cần cập nhật đầy đủ thông tin cá nhân trước khi đăng ký làm player!", null));
         }
         Game game = gameRepository.findById(request.getGameId())
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found"));
@@ -147,19 +167,19 @@ public class GamePlayerController {
         if (game.getHasRoles()) {
             if (request.getRole() == null || request.getRole().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Role is required for this game", null));
+                        .body(new ApiResponse<>(false, "Role is required for this game", null));
             }
             // Normalize role by trimming and converting to uppercase
             String normalizedRole = request.getRole().trim().toUpperCase();
             if (game.getAvailableRoles() != null) {
                 boolean isValidRole = game.getAvailableRoles().stream()
-                    .map(String::trim)
-                    .map(String::toUpperCase)
-                    .anyMatch(role -> role.equals(normalizedRole));
+                        .map(String::trim)
+                        .map(String::toUpperCase)
+                        .anyMatch(role -> role.equals(normalizedRole));
                 if (!isValidRole) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "Invalid role for this game. Available roles: " + 
-                            String.join(", ", game.getAvailableRoles()), null));
+                    return ResponseEntity.badRequest()
+                            .body(new ApiResponse<>(false, "Invalid role for this game. Available roles: " +
+                                    String.join(", ", game.getAvailableRoles()), null));
                 }
                 // Use normalized role for saving
                 request.setRole(normalizedRole);
@@ -167,15 +187,14 @@ public class GamePlayerController {
         }
         // Tạo player từ thông tin user
         GamePlayer gamePlayer = gamePlayerService.createGamePlayer(
-            user.getId(),
-            request.getGameId(),
-            request.getUsername(),
-            request.getRank(),
-            request.getRole(),
-            request.getServer(),
-            request.getPricePerHour(),
-            request.getDescription()
-        );
+                user.getId(),
+                request.getGameId(),
+                request.getUsername(),
+                request.getRank(),
+                request.getRole(),
+                request.getServer(),
+                request.getPricePerHour(),
+                request.getDescription());
         return ResponseEntity.ok(new ApiResponse<>(true, "Game player created successfully", gamePlayer));
     }
 
@@ -186,16 +205,15 @@ public class GamePlayerController {
             @PathVariable Long id,
             @Valid @RequestBody GamePlayerRequest request) {
         GamePlayer gamePlayer = gamePlayerService.updateGamePlayer(
-            id,
-            request.getUserId(),
-            request.getGameId(),
-            request.getUsername(),
-            request.getRank(),
-            request.getRole(),
-            request.getServer(),
-            request.getPricePerHour(),
-            request.getDescription()
-        );
+                id,
+                request.getUserId(),
+                request.getGameId(),
+                request.getUsername(),
+                request.getRank(),
+                request.getRole(),
+                request.getServer(),
+                request.getPricePerHour(),
+                request.getDescription());
         return ResponseEntity.ok(new ApiResponse<>(true, "Game player updated successfully", gamePlayer));
     }
 
@@ -267,16 +285,17 @@ public class GamePlayerController {
             // Validate time
             if (request.getStartTime().isAfter(request.getEndTime())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Thời gian bắt đầu phải trước thời gian kết thúc", null));
+                        .body(new ApiResponse<>(false, "Thời gian bắt đầu phải trước thời gian kết thúc", null));
             }
             if (request.getStartTime().isBefore(LocalDateTime.now())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Thời gian bắt đầu phải sau thời gian hiện tại", null));
+                        .body(new ApiResponse<>(false, "Thời gian bắt đầu phải sau thời gian hiện tại", null));
             }
             // Thêm điều kiện cách ít nhất 15 phút
             if (java.time.Duration.between(LocalDateTime.now(), request.getStartTime()).toMinutes() < 15) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Thời gian bắt đầu thuê phải cách thời điểm hiện tại ít nhất 15 phút", null));
+                        .body(new ApiResponse<>(false,
+                                "Thời gian bắt đầu thuê phải cách thời điểm hiện tại ít nhất 15 phút", null));
             }
 
             // Check if player is available
@@ -284,28 +303,27 @@ public class GamePlayerController {
 
             // Check if player is already hired in the requested time period
             List<Payment> activeHires = paymentRepository.findByPlayerIdAndStatusAndEndTimeAfter(
-                gamePlayer.getUser().getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
-            boolean isOverlapping = activeHires.stream().anyMatch(payment ->
-                request.getStartTime().isBefore(payment.getEndTime()) &&
-                request.getEndTime().isAfter(payment.getStartTime())
-            );
+                    gamePlayer.getUser().getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
+            boolean isOverlapping = activeHires.stream()
+                    .anyMatch(payment -> request.getStartTime().isBefore(payment.getEndTime()) &&
+                            request.getEndTime().isAfter(payment.getStartTime()));
             if (isOverlapping) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Player đang được thuê trong khoảng thời gian này", null));
+                        .body(new ApiResponse<>(false, "Player đang được thuê trong khoảng thời gian này", null));
             }
 
             // Check user's coin balance
             User user = userService.findById(request.getUserId());
             if (user.getCoin() < request.getCoin()) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Số coin không đủ", null));
+                        .body(new ApiResponse<>(false, "Số coin không đủ", null));
             }
 
             // Calculate hours from start and end time
             long hours = java.time.Duration.between(request.getStartTime(), request.getEndTime()).toHours();
             if (hours < 1) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Thời gian thuê phải ít nhất 1 giờ", null));
+                        .body(new ApiResponse<>(false, "Thời gian thuê phải ít nhất 1 giờ", null));
             }
 
             // Tạo đơn thuê (Order) thay vì Payment
@@ -320,22 +338,21 @@ public class GamePlayerController {
 
             // Gửi notification cho player để xác nhận đơn thuê (có orderId)
             notificationService.createNotification(
-                gamePlayer.getUser().getId(),
-                "Bạn có đơn thuê mới!",
-                "Bạn vừa nhận được yêu cầu thuê từ " + user.getUsername() + ". Vui lòng xác nhận đơn thuê trong hệ thống.",
-                "rent",
-                null,
-                order.getId().toString()
-            );
+                    gamePlayer.getUser().getId(),
+                    "Bạn có đơn thuê mới!",
+                    "Bạn vừa nhận được yêu cầu thuê từ " + user.getUsername()
+                            + ". Vui lòng xác nhận đơn thuê trong hệ thống.",
+                    "rent",
+                    null,
+                    order.getId().toString());
             // Gửi notification cho người thuê (user)
             notificationService.createNotification(
-                user.getId(),
-                "Đã gửi yêu cầu thuê player!",
-                "Bạn đã gửi yêu cầu thuê player " + gamePlayer.getUsername() + ". Vui lòng chờ xác nhận từ player.",
-                "rent_request",
-                null,
-                order.getId().toString()
-            );
+                    user.getId(),
+                    "Đã gửi yêu cầu thuê player!",
+                    "Bạn đã gửi yêu cầu thuê player " + gamePlayer.getUsername() + ". Vui lòng chờ xác nhận từ player.",
+                    "rent_request",
+                    null,
+                    order.getId().toString());
 
             Map<String, Object> response = new HashMap<>();
             response.put("order", order);
@@ -347,7 +364,7 @@ public class GamePlayerController {
         } catch (Exception e) {
             log.error("Error hiring game player: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error hiring game player: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error hiring game player: " + e.getMessage(), null));
         }
     }
 
@@ -358,17 +375,17 @@ public class GamePlayerController {
         try {
             User player = userService.findByUsername(authentication.getName());
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
             GamePlayer gamePlayer = order.getPlayer();
 
             // Kiểm tra quyền xác nhận (player phải là người được thuê)
             if (!gamePlayer.getUser().getId().equals(player.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse<>(false, "Bạn không có quyền xác nhận đơn này", null));
+                        .body(new ApiResponse<>(false, "Bạn không có quyền xác nhận đơn này", null));
             }
             if (!"PENDING".equals(order.getStatus())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Đơn thuê không ở trạng thái chờ xác nhận", null));
+                        .body(new ApiResponse<>(false, "Đơn thuê không ở trạng thái chờ xác nhận", null));
             }
 
             // Trừ coin, cộng coin, lưu revenue
@@ -379,7 +396,7 @@ public class GamePlayerController {
             long appRevenue = Math.round(totalCoin * 0.1); // 10% cho app
             if (user.getCoin() < totalCoin) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Người thuê không đủ coin", null));
+                        .body(new ApiResponse<>(false, "Người thuê không đủ coin", null));
             }
             user.setCoin(user.getCoin() - totalCoin);
             player.setCoin(player.getCoin() + playerReceive50);
@@ -393,18 +410,19 @@ public class GamePlayerController {
             gamePlayer.setHiredBy(user);
             gamePlayer.setHireDate(order.getStartTime());
             gamePlayer.setReturnDate(order.getEndTime());
-            gamePlayer.setHoursHired((int) java.time.Duration.between(order.getStartTime(), order.getEndTime()).toHours());
+            gamePlayer.setHoursHired(
+                    (int) java.time.Duration.between(order.getStartTime(), order.getEndTime()).toHours());
             gamePlayerService.save(gamePlayer);
 
             // Gửi notification cho người thuê khi player xác nhận đơn
             notificationService.createNotification(
-                user.getId(),
-                "Đơn thuê đã được xác nhận!",
-                "Player " + gamePlayer.getUsername() + " đã xác nhận đơn thuê của bạn. Hãy chuẩn bị trải nghiệm dịch vụ!",
-                "rent_confirm",
-                null,
-                order.getId().toString()
-            );
+                    user.getId(),
+                    "Đơn thuê đã được xác nhận!",
+                    "Player " + gamePlayer.getUsername()
+                            + " đã xác nhận đơn thuê của bạn. Hãy chuẩn bị trải nghiệm dịch vụ!",
+                    "rent_confirm",
+                    null,
+                    order.getId().toString());
 
             Map<String, Object> response = new HashMap<>();
             response.put("order", order);
@@ -416,7 +434,7 @@ public class GamePlayerController {
         } catch (Exception e) {
             log.error("Error confirming order: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error confirming order: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error confirming order: " + e.getMessage(), null));
         }
     }
 
@@ -479,13 +497,13 @@ public class GamePlayerController {
         try {
             User user = userService.findByUsername(authentication.getName());
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
             GamePlayer gamePlayer = order.getPlayer();
 
             // Chỉ cho phép hủy khi đơn đang chờ xác nhận
             if (!"PENDING".equals(order.getStatus())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Chỉ có thể hủy đơn khi đang chờ xác nhận", null));
+                        .body(new ApiResponse<>(false, "Chỉ có thể hủy đơn khi đang chờ xác nhận", null));
             }
 
             // Hoàn coin
@@ -512,23 +530,21 @@ public class GamePlayerController {
             if (isPlayer) {
                 // Player hủy đơn: gửi cho renter
                 notificationService.createNotification(
-                    order.getRenter().getId(),
-                    "Đơn thuê bị từ chối",
-                    "Đơn thuê của bạn đã bị từ chối bởi player.",
-                    "rent_reject",
-                    null,
-                    order.getId().toString()
-                );
+                        order.getRenter().getId(),
+                        "Đơn thuê bị từ chối",
+                        "Đơn thuê của bạn đã bị từ chối bởi player.",
+                        "rent_reject",
+                        null,
+                        order.getId().toString());
             } else if (isRenter) {
                 // Người thuê tự hủy: gửi cho chính họ
                 notificationService.createNotification(
-                    user.getId(),
-                    "Hủy đơn thuê thành công",
-                    "Bạn đã hủy đơn thuê thành công.",
-                    "rent_cancel",
-                    null,
-                    order.getId().toString()
-                );
+                        user.getId(),
+                        "Hủy đơn thuê thành công",
+                        "Bạn đã hủy đơn thuê thành công.",
+                        "rent_cancel",
+                        null,
+                        order.getId().toString());
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -540,7 +556,7 @@ public class GamePlayerController {
         } catch (Exception e) {
             log.error("Error canceling order: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error canceling order: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error canceling order: " + e.getMessage(), null));
         }
     }
 
@@ -550,29 +566,29 @@ public class GamePlayerController {
     public ResponseEntity<ApiResponse<?>> getHiredPlayers(Authentication authentication) {
         try {
             User user = userService.findByUsername(authentication.getName());
-            
+
             // Get all active payments for the user
             List<Payment> activeHires = paymentRepository.findByUserIdAndStatusAndEndTimeAfter(
-                user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
+                    user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
 
             List<Map<String, Object>> hiredPlayers = activeHires.stream()
-                .map(payment -> {
-                    Map<String, Object> playerInfo = new HashMap<>();
-                    GamePlayer gamePlayer = payment.getGamePlayer();
-                    playerInfo.put("gamePlayer", gamePlayer);
-                    playerInfo.put("payment", payment);
-                    playerInfo.put("startTime", payment.getStartTime());
-                    playerInfo.put("endTime", payment.getEndTime());
-                    playerInfo.put("coin", payment.getCoin());
-                    return playerInfo;
-                })
-                .collect(Collectors.toList());
+                    .map(payment -> {
+                        Map<String, Object> playerInfo = new HashMap<>();
+                        GamePlayer gamePlayer = payment.getGamePlayer();
+                        playerInfo.put("gamePlayer", gamePlayer);
+                        playerInfo.put("payment", payment);
+                        playerInfo.put("startTime", payment.getStartTime());
+                        playerInfo.put("endTime", payment.getEndTime());
+                        playerInfo.put("coin", payment.getCoin());
+                        return playerInfo;
+                    })
+                    .collect(Collectors.toList());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Successfully retrieved hired players", hiredPlayers));
         } catch (Exception e) {
             log.error("Error getting hired players: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error getting hired players: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error getting hired players: " + e.getMessage(), null));
         }
     }
 
@@ -582,29 +598,30 @@ public class GamePlayerController {
     public ResponseEntity<ApiResponse<?>> getPlayersHiredByMe(Authentication authentication) {
         try {
             User user = userService.findByUsername(authentication.getName());
-            
+
             // Get all active payments where the user is the hirer
             List<Payment> activeHires = paymentRepository.findByUserIdAndStatusAndEndTimeAfter(
-                user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
+                    user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
 
             List<Map<String, Object>> hiredPlayers = activeHires.stream()
-                .map(payment -> {
-                    Map<String, Object> playerInfo = new HashMap<>();
-                    GamePlayer gamePlayer = payment.getGamePlayer();
-                    playerInfo.put("gamePlayer", gamePlayer);
-                    playerInfo.put("payment", payment);
-                    playerInfo.put("startTime", payment.getStartTime());
-                    playerInfo.put("endTime", payment.getEndTime());
-                    playerInfo.put("coin", payment.getCoin());
-                    return playerInfo;
-                })
-                .collect(Collectors.toList());
+                    .map(payment -> {
+                        Map<String, Object> playerInfo = new HashMap<>();
+                        GamePlayer gamePlayer = payment.getGamePlayer();
+                        playerInfo.put("gamePlayer", gamePlayer);
+                        playerInfo.put("payment", payment);
+                        playerInfo.put("startTime", payment.getStartTime());
+                        playerInfo.put("endTime", payment.getEndTime());
+                        playerInfo.put("coin", payment.getCoin());
+                        return playerInfo;
+                    })
+                    .collect(Collectors.toList());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Successfully retrieved players hired by you", hiredPlayers));
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Successfully retrieved players hired by you", hiredPlayers));
         } catch (Exception e) {
             log.error("Error getting players hired by user: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error getting players hired by you: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error getting players hired by you: " + e.getMessage(), null));
         }
     }
 
@@ -614,30 +631,31 @@ public class GamePlayerController {
     public ResponseEntity<ApiResponse<?>> getPlayersHiredByOthers(Authentication authentication) {
         try {
             User user = userService.findByUsername(authentication.getName());
-            
+
             // Get all active payments where the user is the player
             List<Payment> activeHires = paymentRepository.findByPlayerIdAndStatusAndEndTimeAfter(
-                user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
+                    user.getId(), Payment.PaymentStatus.PENDING, LocalDateTime.now());
 
             List<Map<String, Object>> hiredPlayers = activeHires.stream()
-                .map(payment -> {
-                    Map<String, Object> playerInfo = new HashMap<>();
-                    GamePlayer gamePlayer = payment.getGamePlayer();
-                    playerInfo.put("gamePlayer", gamePlayer);
-                    playerInfo.put("payment", payment);
-                    playerInfo.put("startTime", payment.getStartTime());
-                    playerInfo.put("endTime", payment.getEndTime());
-                    playerInfo.put("coin", payment.getCoin());
-                    playerInfo.put("hirer", payment.getUser());
-                    return playerInfo;
-                })
-                .collect(Collectors.toList());
+                    .map(payment -> {
+                        Map<String, Object> playerInfo = new HashMap<>();
+                        GamePlayer gamePlayer = payment.getGamePlayer();
+                        playerInfo.put("gamePlayer", gamePlayer);
+                        playerInfo.put("payment", payment);
+                        playerInfo.put("startTime", payment.getStartTime());
+                        playerInfo.put("endTime", payment.getEndTime());
+                        playerInfo.put("coin", payment.getCoin());
+                        playerInfo.put("hirer", payment.getUser());
+                        return playerInfo;
+                    })
+                    .collect(Collectors.toList());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Successfully retrieved players hired by others", hiredPlayers));
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Successfully retrieved players hired by others", hiredPlayers));
         } catch (Exception e) {
             log.error("Error getting players hired by others: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error getting players hired by others: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error getting players hired by others: " + e.getMessage(), null));
         }
     }
 
@@ -650,17 +668,17 @@ public class GamePlayerController {
         try {
             User player = userService.findByUsername(authentication.getName());
             Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
             GamePlayer gamePlayer = payment.getGamePlayer();
 
             // Kiểm tra quyền từ chối
             if (!payment.getPlayer().getId().equals(player.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse<>(false, "Bạn không có quyền từ chối đơn này", null));
+                        .body(new ApiResponse<>(false, "Bạn không có quyền từ chối đơn này", null));
             }
             if (!Payment.PaymentStatus.PENDING.equals(payment.getStatus())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Đơn thuê không ở trạng thái chờ xác nhận", null));
+                        .body(new ApiResponse<>(false, "Đơn thuê không ở trạng thái chờ xác nhận", null));
             }
 
             // Cập nhật trạng thái đơn thuê
@@ -673,25 +691,25 @@ public class GamePlayerController {
             User user = payment.getUser();
             // Gửi notification cho user khi bị từ chối đơn thuê
             notificationService.createNotification(
-                user.getId(),
-                "Đơn thuê bị từ chối",
-                "Yêu cầu thuê player " + gamePlayer.getUsername() + " đã bị từ chối.",
-                "rent_reject",
-                null,
-                payment.getId().toString()
-            );
+                    user.getId(),
+                    "Đơn thuê bị từ chối",
+                    "Yêu cầu thuê player " + gamePlayer.getUsername() + " đã bị từ chối.",
+                    "rent_reject",
+                    null,
+                    payment.getId().toString());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Đã từ chối đơn thuê thành công!", null));
         } catch (Exception e) {
             log.error("Error rejecting hire: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error rejecting hire: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error rejecting hire: " + e.getMessage(), null));
         }
     }
 
     @GetMapping("/revenue/total")
     public ResponseEntity<Long> getTotalRevenue() {
-        Long total = revenueRepository.findAll().stream().mapToLong(r -> r.getAmount() != null ? r.getAmount() : 0L).sum();
+        Long total = revenueRepository.findAll().stream().mapToLong(r -> r.getAmount() != null ? r.getAmount() : 0L)
+                .sum();
         return ResponseEntity.ok(total);
     }
 
@@ -700,18 +718,20 @@ public class GamePlayerController {
         java.time.LocalDate today = java.time.LocalDate.now();
         java.time.LocalDate yesterday = today.minusDays(1);
         java.time.LocalDateTime startToday = today.atStartOfDay();
-        java.time.LocalDateTime endToday = today.atTime(23,59,59);
+        java.time.LocalDateTime endToday = today.atTime(23, 59, 59);
         java.time.LocalDateTime startYesterday = yesterday.atStartOfDay();
-        java.time.LocalDateTime endYesterday = yesterday.atTime(23,59,59);
+        java.time.LocalDateTime endYesterday = yesterday.atTime(23, 59, 59);
         Long todayRevenue = revenueRepository.sumRevenueByCreatedAtBetween(startToday, endToday);
         Long yesterdayRevenue = revenueRepository.sumRevenueByCreatedAtBetween(startYesterday, endYesterday);
-        if (todayRevenue == null) todayRevenue = 0L;
-        if (yesterdayRevenue == null) yesterdayRevenue = 0L;
+        if (todayRevenue == null)
+            todayRevenue = 0L;
+        if (yesterdayRevenue == null)
+            yesterdayRevenue = 0L;
         double percent;
         if (yesterdayRevenue == 0) {
             percent = todayRevenue > 0 ? 100.0 : 0.0;
         } else {
-            percent = ((double)(todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100.0;
+            percent = ((double) (todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100.0;
         }
         return ResponseEntity.ok(percent);
     }
@@ -723,13 +743,13 @@ public class GamePlayerController {
     public ResponseEntity<ApiResponse<?>> completeOrder(@PathVariable Long orderId, Authentication authentication) {
         try {
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
             GamePlayer gamePlayer = order.getPlayer();
 
             // Chỉ cho phép hoàn thành khi trạng thái là CONFIRMED
             if (!"CONFIRMED".equals(order.getStatus())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Chỉ có thể hoàn thành đơn khi đã xác nhận", null));
+                        .body(new ApiResponse<>(false, "Chỉ có thể hoàn thành đơn khi đã xác nhận", null));
             }
 
             // Cập nhật trạng thái đơn và player
@@ -752,21 +772,19 @@ public class GamePlayerController {
 
             // Gửi notification cho user và player
             notificationService.createNotification(
-                order.getRenter().getId(),
-                "Đơn thuê đã hoàn thành",
-                "Đơn thuê của bạn đã được hoàn thành.",
-                "rent_complete",
-                null,
-                order.getId().toString()
-            );
+                    order.getRenter().getId(),
+                    "Đơn thuê đã hoàn thành",
+                    "Đơn thuê của bạn đã được hoàn thành.",
+                    "rent_complete",
+                    null,
+                    order.getId().toString());
             notificationService.createNotification(
-                gamePlayer.getUser().getId(),
-                "Đơn thuê đã hoàn thành",
-                "Bạn đã hoàn thành đơn thuê với " + order.getRenter().getUsername() + ".",
-                "rent_complete",
-                null,
-                order.getId().toString()
-            );
+                    gamePlayer.getUser().getId(),
+                    "Đơn thuê đã hoàn thành",
+                    "Bạn đã hoàn thành đơn thuê với " + order.getRenter().getUsername() + ".",
+                    "rent_complete",
+                    null,
+                    order.getId().toString());
 
             // Gửi thông báo đánh giá cho người thuê
             orderService.sendReviewNotificationForCompletedOrder(order);
@@ -779,36 +797,37 @@ public class GamePlayerController {
         } catch (Exception e) {
             log.error("Error completing order: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error completing order: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error completing order: " + e.getMessage(), null));
         }
     }
 
     @PostMapping("/order/{orderId}/review")
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Đánh giá player cho đơn thuê (Order)")
-    public ResponseEntity<ApiResponse<?>> reviewOrder(@PathVariable Long orderId, @Valid @RequestBody ReviewRequest request, Authentication authentication) {
+    public ResponseEntity<ApiResponse<?>> reviewOrder(@PathVariable Long orderId,
+            @Valid @RequestBody ReviewRequest request, Authentication authentication) {
         try {
             User user = userService.findByUsername(authentication.getName());
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
             GamePlayer gamePlayer = order.getPlayer();
 
             // Chỉ cho phép đánh giá khi đơn đã hoàn thành
             if (!"COMPLETED".equals(order.getStatus())) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Chỉ có thể đánh giá sau khi đơn đã hoàn thành", null));
+                        .body(new ApiResponse<>(false, "Chỉ có thể đánh giá sau khi đơn đã hoàn thành", null));
             }
 
             // Kiểm tra user là người thuê
             if (!order.getRenter().getId().equals(user.getId())) {
                 return ResponseEntity.status(403)
-                    .body(new ApiResponse<>(false, "Không có quyền đánh giá đơn này", null));
+                        .body(new ApiResponse<>(false, "Không có quyền đánh giá đơn này", null));
             }
 
             // Kiểm tra đã đánh giá chưa
             if (playerReviewRepository.existsByOrderId(orderId)) {
                 return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Bạn đã đánh giá đơn này rồi", null));
+                        .body(new ApiResponse<>(false, "Bạn đã đánh giá đơn này rồi", null));
             }
 
             PlayerReview review = new PlayerReview();
@@ -822,27 +841,28 @@ public class GamePlayerController {
 
             // Gửi notification cho player
             notificationService.createNotification(
-                gamePlayer.getUser().getId(),
-                "Bạn nhận được đánh giá mới!",
-                "Bạn vừa nhận được đánh giá từ " + user.getUsername() + ".",
-                "review",
-                null,
-                order.getId().toString()
-            );
+                    gamePlayer.getUser().getId(),
+                    "Bạn nhận được đánh giá mới!",
+                    "Bạn vừa nhận được đánh giá từ " + user.getUsername() + ".",
+                    "review",
+                    null,
+                    order.getId().toString());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Đánh giá thành công!", review));
         } catch (Exception e) {
             log.error("Error review order: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error review order: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error review order: " + e.getMessage(), null));
         }
     }
 
     @Data
     public static class BanRequest {
-        @NotBlank(message = "Lý do ban là bắt buộc")    private String reason;
-        
-        @Size(max = 500, message = "Mô tả chi tiết không được quá 500")    private String description;
+        @NotBlank(message = "Lý do ban là bắt buộc")
+        private String reason;
+
+        @Size(max = 500, message = "Mô tả chi tiết không được quá 500")
+        private String description;
     }
 
     @PostMapping("/ban/{playerId}")
@@ -850,7 +870,7 @@ public class GamePlayerController {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     @Operation(summary = "Ban player")
     public ResponseEntity<ApiResponse<?>> banPlayer(
-            @PathVariable Long playerId, 
+            @PathVariable Long playerId,
             @Valid @RequestBody BanRequest request,
             Authentication authentication) {
         try {
@@ -860,9 +880,10 @@ public class GamePlayerController {
 
             // Hủy các đơn thuê PENDING/CONFIRMED của player này
             List<Order> ordersToCancel = orderRepository.findAll().stream()
-                .filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(player.getId()))
-                .filter(o -> "PENDING".equalsIgnoreCase(o.getStatus()) || "CONFIRMED".equalsIgnoreCase(o.getStatus()))
-                .toList();
+                    .filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(player.getId()))
+                    .filter(o -> "PENDING".equalsIgnoreCase(o.getStatus())
+                            || "CONFIRMED".equalsIgnoreCase(o.getStatus()))
+                    .toList();
             for (Order order : ordersToCancel) {
                 // Hoàn coin cho user nếu chưa hoàn thành
                 if (order.getRenter() != null && order.getPrice() != null && order.getPrice() > 0) {
@@ -874,13 +895,12 @@ public class GamePlayerController {
                 // Gửi notification cho user
                 if (order.getRenter() != null) {
                     notificationService.createNotification(
-                        order.getRenter().getId(),
-                        "Đơn thuê bị hủy do player vi phạm",
-                        "Đơn thuê với player này đã bị hủy và bạn đã được hoàn coin.",
-                        "order_cancel_ban",
-                        null,
-                        order.getId().toString()
-                    );
+                            order.getRenter().getId(),
+                            "Đơn thuê bị hủy do player vi phạm",
+                            "Đơn thuê với player này đã bị hủy và bạn đã được hoàn coin.",
+                            "order_cancel_ban",
+                            null,
+                            order.getId().toString());
                 }
             }
 
@@ -900,27 +920,25 @@ public class GamePlayerController {
             if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
                 notificationMessage += "\nChi tiết: " + request.getDescription();
             }
-            
+
             notificationService.createNotification(
-                playerUser.getId(),
-                "Tài khoản của bạn đã bị ban",
-                notificationMessage,
-                "account_banned",
-                null,
-                null
-            );
+                    playerUser.getId(),
+                    "Tài khoản của bạn đã bị ban",
+                    notificationMessage,
+                    "account_banned",
+                    null,
+                    null);
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Player đã bị ban thành công", Map.of(
-                "playerId", playerId,
-                "reason", request.getReason(),
-                "description", request.getDescription(),
-                "bannedBy", admin.getUsername(),
-                "bannedAt", java.time.LocalDateTime.now()
-            )));
+                    "playerId", playerId,
+                    "reason", request.getReason(),
+                    "description", request.getDescription(),
+                    "bannedBy", admin.getUsername(),
+                    "bannedAt", java.time.LocalDateTime.now())));
         } catch (Exception e) {
             log.error("Error banning player: " + e.getMessage());
             return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "Error banning player: " + e.getMessage(), null));
+                    .body(new ApiResponse<>(false, "Error banning player: " + e.getMessage(), null));
         }
     }
 
@@ -946,7 +964,8 @@ public class GamePlayerController {
             return ResponseEntity.ok(new ApiResponse<>(true, "Player đã được mở ban", null));
         } catch (Exception e) {
             log.error("Error unbanning player: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error unbanning player: " + e.getMessage(), null));
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "Error unbanning player: " + e.getMessage(), null));
         }
     }
 
@@ -960,15 +979,17 @@ public class GamePlayerController {
             dto.setName(gp.getUser() != null ? gp.getUser().getFullName() : "");
             dto.setEmail(gp.getUser() != null ? gp.getUser().getEmail() : "");
             // Số đơn thuê
-            int totalOrders = orderRepository.findAll().stream().filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(gp.getId())).toList().size();
+            int totalOrders = orderRepository.findAll().stream()
+                    .filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(gp.getId())).toList().size();
             dto.setTotalOrders(totalOrders);
             // Số đánh giá
             int totalReviews = playerReviewRepository.findByGamePlayerUserId(gp.getUser().getId()).size();
             dto.setTotalReviews(totalReviews);
             // Thu nhập: tổng price các order hoàn thành
             long totalRevenue = orderRepository.findAll().stream()
-                .filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(gp.getId()) && "COMPLETED".equalsIgnoreCase(o.getStatus()))
-                .mapToLong(o -> o.getPrice() != null ? o.getPrice() : 0L).sum();
+                    .filter(o -> o.getPlayer() != null && o.getPlayer().getId().equals(gp.getId())
+                            && "COMPLETED".equalsIgnoreCase(o.getStatus()))
+                    .mapToLong(o -> o.getPrice() != null ? o.getPrice() : 0L).sum();
             dto.setTotalRevenue(totalRevenue);
             // Trạng thái
             dto.setStatus(gp.getStatus());
@@ -978,8 +999,9 @@ public class GamePlayerController {
             dto.setRating(gp.getRating() != null ? gp.getRating() : 0.0);
             // Thể loại game
             dto.setGameName(gp.getGame() != null ? gp.getGame().getName() : "");
+            dto.setAvatarUrl(gp.getUser() != null ? gp.getUser().getAvatarUrl() : null);
             result.add(dto);
         }
         return ResponseEntity.ok(new ApiResponse<>(true, "Game player summary", result));
     }
-} 
+}
